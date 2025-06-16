@@ -1,5 +1,6 @@
 package com.qiujie;
 
+import com.qiujie.enums.JobSequenceStrategyEnum;
 import generator.app.Application;
 import generator.app.CyberShake;
 import generator.app.Montage;
@@ -85,23 +86,8 @@ public class Constants {
 
     public static JobSequenceStrategyEnum JOB_SEQUENCE_STRATEGY;
 
-    public enum JobSequenceStrategyEnum {
-        UPWARD_RANK,
-        DOWNWARD_RANK,
-        DEADLINE,
-        DEPTH,
-        LENGTH_ASC,
-        LENGTH_DESC,
-        DEFAULT
-    }
 
     public static Marker STARTUP;
-
-
-    public enum Level {
-        STARTUP
-    }
-
     public static boolean ENABLE_STARTUP = true;
 
 }
