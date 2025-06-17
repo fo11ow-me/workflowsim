@@ -1,12 +1,13 @@
 <configuration>
     <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
         <encoder>
-            <pattern>%d{HH:mm:ss.SSS} [%thread] %highlight(%-5level) %yellow(%marker) %cyan(%logger{15}) - %msg%n</pattern>
+            <pattern>%d{HH:mm:ss.SSS} [%thread] %highlight(%-5level) %yellow(%marker) %cyan(%logger{15}) - %msg%n
+            </pattern>
         </encoder>
     </appender>
 
-    <!-- STARTUP Level -->
-    <turboFilter class="com.qiujie.filter.StartupMarkerFilter"/>
+    <!-- BOOT and STARTUP Level -->
+    <turboFilter class="com.qiujie.filter.LogMarkerFilter"/>
 
     <!-- Log file output directory -->
     <property name="LOG_PATH" value="log"/>

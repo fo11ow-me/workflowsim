@@ -11,11 +11,13 @@ import com.qiujie.core.DvfsCloudletSchedulerSpaceShared;
 import com.qiujie.core.WorkflowDatacenter;
 import com.qiujie.entity.*;
 import com.qiujie.entity.Job;
+import com.qiujie.enums.LevelEnum;
 import com.qiujie.starter.SimStarter;
 import io.bretty.console.table.Alignment;
 import io.bretty.console.table.ColumnFormatter;
 import io.bretty.console.table.Precision;
 import io.bretty.console.table.Table;
+import lombok.extern.slf4j.Slf4j;
 import org.cloudbus.cloudsim.*;
 import org.cloudbus.cloudsim.provisioners.BwProvisionerSimple;
 import org.cloudbus.cloudsim.provisioners.PeProvisionerSimple;
@@ -24,6 +26,9 @@ import org.knowm.xchart.SwingWrapper;
 import org.knowm.xchart.XYChart;
 import org.knowm.xchart.XYChartBuilder;
 import org.knowm.xchart.style.Styler;
+import org.slf4j.LoggerFactory;
+import org.slf4j.Marker;
+import org.slf4j.MarkerFactory;
 
 import java.io.File;
 import java.math.BigDecimal;
@@ -33,7 +38,10 @@ import java.util.stream.IntStream;
 
 import static com.qiujie.Constants.*;
 
+@Slf4j
 public class ExperimentUtil {
+
+    private static final Marker RESULT = MarkerFactory.getMarker(LevelEnum.RESULT.name());
 
 
     public static void printSimResult(List<Job> list) {
@@ -45,14 +53,8 @@ public class ExperimentUtil {
      *
      * @param list
      */
-    public static void printSimResult(List<Job> list, String str) {
+    public static void printSimResult(List<Job> list, String title) {
         list.sort(Comparator.comparingDouble(Cloudlet::getGuestId));
-        System.out.println();
-        System.out.println("                                                  " + str + " Simulation Result");
-        List<Integer> dcIds = list.stream().map(Cloudlet::getResourceId).distinct().toList();
-        System.out.println("Use " + dcIds.size() + " Dcs " + dcIds);
-        List<Integer> vmIds = list.stream().map(Cloudlet::getGuestId).distinct().toList();
-        System.out.println("Use " + vmIds.size() + " Vms " + vmIds);
         Table.Builder builder = new Table.Builder("idx", IntStream.rangeClosed(0, list.size() - 1).boxed().toArray(Number[]::new), ColumnFormatter.number(Alignment.CENTER, 6, Precision.ZERO))
                 .addColumn("Job_Id", list.stream().map(Cloudlet::getCloudletId).toArray(Number[]::new), ColumnFormatter.number(Alignment.CENTER, 10, Precision.ZERO))
                 .addColumn("Job_Name", list.stream().map(Job::getName).toArray(String[]::new), ColumnFormatter.text(Alignment.CENTER, 30))
@@ -77,8 +79,9 @@ public class ExperimentUtil {
                 .addColumn("Count", list.stream().map(Job::getCount).toArray(Number[]::new), ColumnFormatter.number(Alignment.CENTER, 10, Precision.ZERO))
                 .addColumn("Depth", list.stream().map(Job::getDepth).toArray(Number[]::new), ColumnFormatter.number(Alignment.CENTER, 5, Precision.ZERO));
         Table table = builder.build();
-        System.out.println(table);
-        System.out.println();
+        List<Integer> dcIds = list.stream().map(Cloudlet::getResourceId).distinct().toList();
+        List<Integer> vmIds = list.stream().map(Cloudlet::getGuestId).distinct().toList();
+        log.info(RESULT, "\n                                                                               {} Simulation Result\nUse {} Dcs {}\nUse {} Vms {}\n{}\n", title, dcIds.size(), dcIds, vmIds.size(), vmIds, table);
     }
 
     public static void printExperimentResult(List<SimStarter> list) {
@@ -86,7 +89,7 @@ public class ExperimentUtil {
     }
 
 
-    public static void printExperimentResult(List<SimStarter> list, String str) {
+    public static void printExperimentResult(List<SimStarter> list, String title) {
         List<SimStarter> sortByPlnElecCost = list.stream().sorted(Comparator.comparingDouble(SimStarter::getPlnElecCost)).toList();
         List<SimStarter> sortByPlnFinishTime = list.stream().sorted(Comparator.comparingDouble(SimStarter::getPlnFinishTime)).toList();
         List<SimStarter> sortBySimElecCost = list.stream().sorted(Comparator.comparingDouble(SimStarter::getSimElecCost)).toList();
@@ -96,22 +99,19 @@ public class ExperimentUtil {
         List<SimStarter> sortByVmCount = list.stream().sorted(Comparator.comparingInt(SimStarter::getVmCount)).toList();
         List<SimStarter> sortByOverdueCount = list.stream().sorted(Comparator.comparingInt(SimStarter::getOverdueCount)).toList();
         List<SimStarter> sortByPlnRuntime = list.stream().sorted(Comparator.comparingDouble(SimStarter::getPlnRuntime)).toList();
-        System.out.println();
-        System.out.println("                                                  " + str + " Experiment Result");
         Table.Builder builder = new Table.Builder("idx", IntStream.rangeClosed(0, list.size() - 1).boxed().toArray(Number[]::new), ColumnFormatter.number(Alignment.CENTER, 6, Precision.ZERO))
-                .addColumn("Name", list.stream().map(SimStarter::getName).toArray(String[]::new), ColumnFormatter.text(Alignment.CENTER, 50))
-                .addColumn("Pln_Elec_Cost", list.stream().map(starter -> String.format("%.2f (%d)", starter.getPlnElecCost(), sortByPlnElecCost.indexOf(starter))).toArray(String[]::new), ColumnFormatter.text(Alignment.CENTER, 20))
+                .addColumn("Name", list.stream().map(SimStarter::getName).toArray(String[]::new), ColumnFormatter.text(Alignment.CENTER, 80))
+//                .addColumn("Pln_Elec_Cost", list.stream().map(starter -> String.format("%.2f (%d)", starter.getPlnElecCost(), sortByPlnElecCost.indexOf(starter))).toArray(String[]::new), ColumnFormatter.text(Alignment.CENTER, 20))
                 .addColumn("Sim_Elec_Cost", list.stream().map(starter -> String.format("%.2f (%d)", starter.getSimElecCost(), sortBySimElecCost.indexOf(starter))).toArray(String[]::new), ColumnFormatter.text(Alignment.CENTER, 20))
-                .addColumn("Pln_Finish_Time", list.stream().map(starter -> String.format("%.2f (%d)", starter.getPlnFinishTime(), sortByPlnFinishTime.indexOf(starter))).toArray(String[]::new), ColumnFormatter.text(Alignment.CENTER, 20))
+//                .addColumn("Pln_Finish_Time", list.stream().map(starter -> String.format("%.2f (%d)", starter.getPlnFinishTime(), sortByPlnFinishTime.indexOf(starter))).toArray(String[]::new), ColumnFormatter.text(Alignment.CENTER, 20))
                 .addColumn("Sim_Finish_Time", list.stream().map(starter -> String.format("%.2f (%d)", starter.getSimFinishTime(), sortBySimFinishTime.indexOf(starter))).toArray(String[]::new), ColumnFormatter.text(Alignment.CENTER, 20))
-                .addColumn("Retry_Count", list.stream().map(starter -> String.format("%d (%d)", starter.getRetryCount(), sortByRetryCount.indexOf(starter))).toArray(String[]::new), ColumnFormatter.text(Alignment.CENTER, 20))
-                .addColumn("Dc_Count", list.stream().map(starter -> String.format("%d (%d)", starter.getDcCount(), sortByDcCount.indexOf(starter))).toArray(String[]::new), ColumnFormatter.text(Alignment.CENTER, 20))
-                .addColumn("Vm_Count", list.stream().map(starter -> String.format("%d (%d)", starter.getVmCount(), sortByVmCount.indexOf(starter))).toArray(String[]::new), ColumnFormatter.text(Alignment.CENTER, 20))
-                .addColumn("Overdue_Count", list.stream().map(starter -> String.format("%d (%d)", starter.getOverdueCount(), sortByOverdueCount.indexOf(starter))).toArray(String[]::new), ColumnFormatter.text(Alignment.CENTER, 20))
-                .addColumn("Pln_Runtime", list.stream().map(starter -> String.format("%.2f (%d)", starter.getPlnRuntime(), sortByPlnRuntime.indexOf(starter))).toArray(String[]::new), ColumnFormatter.text(Alignment.CENTER, 20));
+                .addColumn("Retry_Count", list.stream().map(starter -> String.format("%d (%d)", starter.getRetryCount(), sortByRetryCount.indexOf(starter))).toArray(String[]::new), ColumnFormatter.text(Alignment.CENTER, 15))
+                .addColumn("Dc_Count", list.stream().map(starter -> String.format("%d (%d)", starter.getDcCount(), sortByDcCount.indexOf(starter))).toArray(String[]::new), ColumnFormatter.text(Alignment.CENTER, 15))
+                .addColumn("Vm_Count", list.stream().map(starter -> String.format("%d (%d)", starter.getVmCount(), sortByVmCount.indexOf(starter))).toArray(String[]::new), ColumnFormatter.text(Alignment.CENTER, 15))
+                .addColumn("Overdue_Count", list.stream().map(starter -> String.format("%d (%d)", starter.getOverdueCount(), sortByOverdueCount.indexOf(starter))).toArray(String[]::new), ColumnFormatter.text(Alignment.CENTER, 15))
+                .addColumn("Pln_Runtime", list.stream().map(starter -> String.format("%.2f (%d)", starter.getPlnRuntime(), sortByPlnRuntime.indexOf(starter))).toArray(String[]::new), ColumnFormatter.text(Alignment.CENTER, 15));
         Table table = builder.build();
-        System.out.println(table);
-        System.out.println();
+        log.info(RESULT, "\n                                                                               {} Experiment Result\n{}\n", title, table);
     }
 
 
