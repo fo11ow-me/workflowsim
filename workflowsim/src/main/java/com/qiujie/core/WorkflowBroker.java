@@ -3,6 +3,7 @@ package com.qiujie.core;
 
 import com.qiujie.entity.File;
 import com.qiujie.entity.Job;
+import com.qiujie.entity.Parameter;
 import com.qiujie.entity.Workflow;
 import com.qiujie.planner.WorkflowPlannerAbstract;
 import com.qiujie.util.ExperimentUtil;
@@ -27,10 +28,15 @@ public class WorkflowBroker extends DatacenterBroker {
 
     private final WorkflowPlannerAbstract planner;
 
-    public WorkflowBroker(Class<? extends WorkflowPlannerAbstract> clazz) throws Exception {
+    public WorkflowBroker(Class<? extends WorkflowPlannerAbstract> clazz, Parameter parameter) throws Exception {
         super(WorkflowBroker.class.getSimpleName() + "_#" + CloudSim.getEntityList().size());
         this.planner = clazz.getDeclaredConstructor().newInstance();
+        this.planner.setParameter(parameter);
         this.workflowList = new ArrayList<>();
+    }
+
+    public WorkflowBroker(Class<? extends WorkflowPlannerAbstract> clazz) throws Exception {
+        this(clazz, new Parameter());
     }
 
     public double getPlnElecCost() {

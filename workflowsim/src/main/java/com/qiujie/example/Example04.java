@@ -6,6 +6,7 @@ import com.qiujie.comparator.DepthComparator;
 import com.qiujie.comparator.JobNumComparator;
 import com.qiujie.comparator.LengthComparator;
 import com.qiujie.aop.ClockModifier;
+import com.qiujie.entity.Parameter;
 import com.qiujie.starter.SimStarter;
 import com.qiujie.planner.HEFTPlanner;
 import com.qiujie.util.ExperimentUtil;
@@ -53,13 +54,13 @@ public class Example04 {
 
 
 
-        SimStarter simStarter = new SimStarter(new UniformDistr(0, 1, seed), daxPathList, HEFTPlanner.class, JobNumComparator.class, true);
+        SimStarter simStarter = new SimStarter(new UniformDistr(0, 1, seed), daxPathList, HEFTPlanner.class,new Parameter().setWorkflowComparator(DepthComparator.class).setAscending(true));
         Log.setLevel(Level.OFF);
-        SimStarter simStarter1 = new SimStarter(new UniformDistr(0, 1, seed), daxPathList, HEFTPlanner.class, DepthComparator.class, true);
-        SimStarter simStarter2 = new SimStarter(new UniformDistr(0, 1, seed), daxPathList, HEFTPlanner.class, LengthComparator.class, true);
-        SimStarter simStarter3 = new SimStarter(new UniformDistr(0, 1, seed), daxPathList, HEFTPlanner.class, JobNumComparator.class, false);
-        SimStarter simStarter4 = new SimStarter(new UniformDistr(0, 1, seed), daxPathList, HEFTPlanner.class, DepthComparator.class, false);
-        SimStarter simStarter5 = new SimStarter(new UniformDistr(0, 1, seed), daxPathList, HEFTPlanner.class, LengthComparator.class, false);
+        SimStarter simStarter1 = new SimStarter(new UniformDistr(0, 1, seed), daxPathList, HEFTPlanner.class, new Parameter().setWorkflowComparator(JobNumComparator.class).setAscending(true));
+        SimStarter simStarter2 = new SimStarter(new UniformDistr(0, 1, seed), daxPathList, HEFTPlanner.class, new Parameter().setWorkflowComparator(LengthComparator.class).setAscending(true));
+        SimStarter simStarter3 = new SimStarter(new UniformDistr(0, 1, seed), daxPathList, HEFTPlanner.class, new Parameter().setWorkflowComparator(LengthComparator.class).setAscending(false));
+        SimStarter simStarter4 = new SimStarter(new UniformDistr(0, 1, seed), daxPathList, HEFTPlanner.class, new Parameter().setWorkflowComparator(DepthComparator.class).setAscending(false));
+        SimStarter simStarter5 = new SimStarter(new UniformDistr(0, 1, seed), daxPathList, HEFTPlanner.class, new Parameter().setWorkflowComparator(JobNumComparator.class).setAscending(false));
         List<SimStarter> simStarterList = List.of(simStarter, simStarter1, simStarter2, simStarter3, simStarter4, simStarter5);
 
         simStarter.printSimResult();

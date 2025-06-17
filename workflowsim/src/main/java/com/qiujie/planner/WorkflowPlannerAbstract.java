@@ -1,6 +1,7 @@
 package com.qiujie.planner;
 
 import com.qiujie.entity.*;
+import com.qiujie.enums.JobSequenceStrategyEnum;
 import com.qiujie.util.ExperimentUtil;
 import lombok.AccessLevel;
 import lombok.Getter;
@@ -11,10 +12,7 @@ import org.cloudbus.cloudsim.Host;
 import org.cloudbus.cloudsim.Vm;
 import org.cloudbus.cloudsim.core.CloudSim;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -22,6 +20,10 @@ import static com.qiujie.Constants.*;
 
 @Slf4j
 public abstract class WorkflowPlannerAbstract {
+
+    @Setter
+    @Getter
+    private Parameter parameter;
 
     @NonNull
     @Setter
@@ -65,13 +67,17 @@ public abstract class WorkflowPlannerAbstract {
     public void start() {
         log.info("{}: {}: Starting planning {} Workflows, a total of {} Jobs...", CloudSim.clock(), SIM_NAME, getWorkflowList().size(), getWorkflowList().stream().mapToInt(Workflow::getJobNum).sum());
         long start = System.currentTimeMillis();
-        run();
-        long end = System.currentTimeMillis();
-        this.runtime = (end - start) / 1000.0;
-        log.info("{}: {}: Running {}s", CloudSim.clock(), SIM_NAME, this.runtime);
+        try {
+            run();
+            long end = System.currentTimeMillis();
+            this.runtime = (end - start) / 1000.0;
+            log.info("{}: {}: Running {}s", CloudSim.clock(), SIM_NAME, this.runtime);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
-    protected abstract void run();
+    protected abstract void run() throws Exception;
 
 
     /**
@@ -248,7 +254,23 @@ public abstract class WorkflowPlannerAbstract {
             }
             maxReliability *= maxSubReliability; // To maximize reliability, you need to select the Fv with the smallest value of lambda/mips.
         }
-        workflow.setReliGoal(Math.pow(RELIABILITY_FACTOR, workflow.getJobNum()) * maxReliability);
+        workflow.setReliGoal(Math.pow(getParameter().getReliabilityFactor(), workflow.getJobNum()) * maxReliability);
     }
+
+    protected List<Job> constructInitialJobSequence(Workflow workflow) {
+        JobSequenceStrategyEnum jobSequenceStrategy = getParameter().getJobSequenceStrategy();
+        List<Job> initialSequence;
+        if (jobSequenceStrategy == JobSequenceStrategyEnum.DEPTH) {
+            initialSequence = workflow.getJobList().stream().sorted(Comparator.comparingDouble(Job::getDepth)).toList();
+        } else if (jobSequenceStrategy == JobSequenceStrategyEnum.LENGTH_ASC) {
+            initialSequence = workflow.getJobList().stream().sorted(Comparator.comparingDouble(Job::getLength)).toList();
+        } else if (jobSequenceStrategy == JobSequenceStrategyEnum.LENGTH_DESC) {
+            initialSequence = workflow.getJobList().stream().sorted(Comparator.comparingDouble(Job::getLength).reversed()).toList();
+        } else {
+            initialSequence = workflow.getJobList();
+        }
+        return initialSequence;
+    }
+
 
 }

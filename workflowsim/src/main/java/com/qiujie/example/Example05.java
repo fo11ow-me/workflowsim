@@ -2,6 +2,7 @@
 package com.qiujie.example;
 
 import ch.qos.logback.classic.Level;
+import com.qiujie.entity.Parameter;
 import com.qiujie.starter.ExperimentStarter;
 import com.qiujie.starter.SimStarter;
 import com.qiujie.planner.*;
@@ -16,20 +17,19 @@ import static com.qiujie.Constants.MAX_RETRY_COUNT;
 
 /**
  * Algorithm comparison
- * @author qiujie
  *
+ * @author qiujie
  */
 public class Example05 extends ExperimentStarter {
 
 
     public static void main(String[] args) {
-        startExperiment();
+        new Example05();
     }
 
 
     @Override
     public void run() throws Exception {
-        Log.setLevel(Level.DEBUG);
         List<String> daxPathList = List.of(
                 "data/dax/CyberShake_25.xml"
                 , "data/dax/CyberShake_50.xml"
@@ -48,8 +48,8 @@ public class Example05 extends ExperimentStarter {
         MAX_RETRY_COUNT = 10;
 
         List<SimStarter> simStarterList = List.of(
-                new SimStarter(new UniformDistr(0, 1, seed), daxPathList, HEFTPlanner.class)
-                ,new SimStarter(new UniformDistr(0, 1, seed), daxPathList, RandomPlanner.class)
+                new SimStarter(new UniformDistr(0, 1, seed), daxPathList, HEFTPlanner.class, new Parameter())
+                , new SimStarter(new UniformDistr(0, 1, seed), daxPathList, RandomPlanner.class, new Parameter())
         );
 
         simStarterList.forEach(SimStarter::printSimResult);

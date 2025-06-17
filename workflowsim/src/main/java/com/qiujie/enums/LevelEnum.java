@@ -1,5 +1,7 @@
 package com.qiujie.enums;
 
 public enum LevelEnum {
-    STARTUP
+    BOOT,
+    STARTUP,
+    RESULT
 }

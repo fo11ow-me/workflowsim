@@ -11,7 +11,6 @@ import org.cloudbus.cloudsim.core.CloudSim;
 import java.util.*;
 
 import static com.qiujie.Constants.SIM_NAME;
-import static com.qiujie.Constants.SLACK_TIME_FACTOR;
 
 /**
  * The Random planning algorithm
@@ -93,7 +92,7 @@ public class RandomPlanner extends WorkflowPlannerAbstract {
         Map<Job, Map<Job, Double>> avgPredecessorDataTransferTimeMap = calculateAvgPredecessorDataTransferTime(workflow);
         double mips = getVmList().stream().mapToDouble(Vm::getMips).average().getAsDouble();
         double upwardRank = calculateUpwardRank(avgLocalDataTransferTimeMap, avgPredecessorDataTransferTimeMap, mips, workflow);
-        double slackTime = upwardRank * SLACK_TIME_FACTOR;
+        double slackTime = upwardRank * getParameter().getDeadlineFactor();
         workflow.setDeadline(getFinishTime() + upwardRank + slackTime);
 
     }

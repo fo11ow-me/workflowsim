@@ -1,5 +1,7 @@
 package com.qiujie;
 
+import ch.qos.logback.classic.Level;
+import com.qiujie.comparator.*;
 import com.qiujie.enums.JobSequenceStrategyEnum;
 import generator.app.Application;
 import generator.app.CyberShake;
@@ -66,28 +68,34 @@ public class Constants {
     public static final double INTER_BANDWIDTH = 1e6;
     public static final double INTRA_BANDWIDTH = 10 * INTER_BANDWIDTH;
 
-    public static double LENGTH_FACTOR = 2e3;
+    public static double LENGTH_FACTOR = 1e3;
 
     public static ContinuousDistribution RANDOM;
-
-    public static final List<Double> RELIABILITY_FACTOR_LIST = List.of(0.992, 0.994, 0.996, 0.998);
-    public static final List<Double> SLACK_TIME_FACTOR_LIST = List.of(0.2, 0.4, 0.6, 0.8);
-
-    public static double RELIABILITY_FACTOR = 0.998;
-    public static double SLACK_TIME_FACTOR = 0.2;
-
+    // data
     public static List<Class<? extends Application>> APP_LIST = List.of(Montage.class, CyberShake.class);
-    public static List<Integer> JOB_NUM_LIST = List.of(25, 50, 100, 200, 400);
+    public static List<Integer> JOB_NUM_LIST = List.of(50, 100, 200, 400, 800);
     public static List<Integer> INSTANCE_NUM_LIST = List.of(20, 40, 60, 80, 100);
+    //  List of parameter ranges
+    public static final List<Class<? extends WorkflowComparatorInterface>> WORKFLOW_COMPARATOR_LIST = List.of(DefaultComparator.class, DepthComparator.class, JobNumComparator.class, LengthComparator.class);
+    public static final List<Boolean> ASCENDING_LIST = List.of(true, false);
+    public static final List<Double> DEADLINE_FACTOR_LIST = List.of(0.2, 0.4, 0.6, 0.8);
+    public static final List<Double> RELIABILITY_FACTOR_LIST = List.of(0.992, 0.994, 0.996, 0.998);
+    public static final List<JobSequenceStrategyEnum> JOB_SEQUENCE_STRATEGY_LIST = List.of(JobSequenceStrategyEnum.UPWARD_RANK, JobSequenceStrategyEnum.DOWNWARD_RANK, JobSequenceStrategyEnum.DEADLINE);
+    public static final List<Double> NEIGHBORHOOD_FACTOR_LIST = List.of(0.2, 0.4, 0.6, 0.8);
+    public static final List<Double> SLACK_TIME_FACTOR_LIST = List.of(0.2, 0.4, 0.6, 0.8);
+    // // default parameter values
+    public static Class<? extends WorkflowComparatorInterface> WORKFLOW_COMPARATOR = DefaultComparator.class;
+    public static boolean ASCENDING = true;
+    public static double DEADLINE_FACTOR = 0.2;
+    public static double RELIABILITY_FACTOR = 0.998;
+    public static JobSequenceStrategyEnum JOB_SEQUENCE_STRATEGY = JobSequenceStrategyEnum.UPWARD_RANK;
+    public static double NEIGHBORHOOD_FACTOR = 0.6;
+    public static double SLACK_TIME_FACTOR = 0.8;
 
     public static final double ε = 1e-6;
 
     public static int MAX_RETRY_COUNT = 10;
 
-    public static JobSequenceStrategyEnum JOB_SEQUENCE_STRATEGY;
-
-
-    public static Marker STARTUP;
     public static boolean ENABLE_STARTUP = true;
 
 }
