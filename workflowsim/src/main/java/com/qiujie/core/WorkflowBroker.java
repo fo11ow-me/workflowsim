@@ -15,6 +15,8 @@ import org.cloudbus.cloudsim.lists.VmList;
 
 import java.util.*;
 
+import static com.qiujie.Constants.SIM_NAME;
+
 /**
  * WorkflowBroker
  *
@@ -201,8 +203,8 @@ public class WorkflowBroker extends DatacenterBroker {
         selectHostForLocalInputFile();
         planner.setWorkflowList(new ArrayList<>(workflowList));
         planner.setVmList(new ArrayList<>(getGuestsCreatedList()));
-        log.debug("{}: {}: Create {} Vms {}", CloudSim.clock(), getName(), getGuestsCreatedList().size(), getGuestsCreatedList().stream().map(GuestEntity::getId).sorted().toList());
-        log.info("{}: {}: Starting planning...", CloudSim.clock(), getName());
+        log.debug("{}: {}: Created {} Vms {}", CloudSim.clock(), getName(), getGuestsCreatedList().size(), getGuestsCreatedList().stream().map(GuestEntity::getId).sorted().toList());
+        log.debug("{}: {}: Preparing to plan {} Workflows {}, a total of {} Jobs", CloudSim.clock(), getName(), getWorkflowList().size(), getWorkflowList().stream().map(Workflow::getName).toList(), getWorkflowList().stream().mapToInt(Workflow::getJobNum).sum());
         planner.start();
         log.debug("{}: {}: Job schedule sequence {}", CloudSim.clock(), getName(), planner.getSequence().stream().map(Cloudlet::getCloudletId).toList());
         log.info("{}: {}: Starting submitting...", CloudSim.clock(), getName());

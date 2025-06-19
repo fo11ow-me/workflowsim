@@ -65,7 +65,7 @@ public abstract class WorkflowPlannerAbstract {
 
 
     public void start() {
-        log.info("{}: {}: Starting planning {} Workflows, a total of {} Jobs...", CloudSim.clock(), SIM_NAME, getWorkflowList().size(), getWorkflowList().stream().mapToInt(Workflow::getJobNum).sum());
+        log.info("{}: {}: Starting planning...", CloudSim.clock(), SIM_NAME);
         long start = System.currentTimeMillis();
         try {
             run();
@@ -247,7 +247,7 @@ public abstract class WorkflowPlannerAbstract {
                 for (Fv fv : dvfsVm.getFvList()) {
                     double executionTime = job.getLength() / fv.getMips();
                     execTimeMap.get(job).put(fv, executionTime);
-                    double reliability = Math.exp(-fv.getLambda() * executionTime); // smaller frequency, smaller reliability
+                    double reliability = ExperimentUtil.calculateReliability(fv.getLambda(), executionTime); // smaller frequency, smaller reliability
                     reliabilityMap.get(job).put(fv, reliability);
                     maxSubReliability = Math.max(maxSubReliability, reliability);
                 }

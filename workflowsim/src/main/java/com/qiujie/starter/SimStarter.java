@@ -117,7 +117,11 @@ public class SimStarter {
     }
 
     public void generateSimGanttData() {
-        ExperimentUtil.generateSimGanttData(broker.getCloudletReceivedList(), name);
+        generateSimGanttData(name);
+    }
+
+    public void generateSimGanttData(String str) {
+        ExperimentUtil.generateSimGanttData(broker.getCloudletReceivedList(), str + "_" + name);
     }
 
 

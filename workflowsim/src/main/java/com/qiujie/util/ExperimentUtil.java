@@ -1,7 +1,9 @@
 package com.qiujie.util;
 
+import cn.hutool.core.bean.BeanUtil;
 import cn.hutool.core.date.DateUtil;
 import cn.hutool.core.io.FileUtil;
+import cn.hutool.core.text.csv.CsvUtil;
 import cn.hutool.core.util.CharsetUtil;
 import cn.hutool.json.*;
 import com.qiujie.config.FvConfig;
@@ -26,7 +28,6 @@ import org.knowm.xchart.SwingWrapper;
 import org.knowm.xchart.XYChart;
 import org.knowm.xchart.XYChartBuilder;
 import org.knowm.xchart.style.Styler;
-import org.slf4j.LoggerFactory;
 import org.slf4j.Marker;
 import org.slf4j.MarkerFactory;
 
@@ -42,6 +43,79 @@ import static com.qiujie.Constants.*;
 public class ExperimentUtil {
 
     private static final Marker RESULT = MarkerFactory.getMarker(LevelEnum.RESULT.name());
+
+    private static List<HostConfig> readHostConfig() {
+        String path = Objects.requireNonNull(ExperimentUtil.class.getClassLoader().getResource("config/host.json")).getPath();
+        JSONArray array = JSONUtil.readJSONArray(new File(path), CharsetUtil.CHARSET_UTF_8);
+        return JSONUtil.toList(array, HostConfig.class);
+    }
+
+    private static List<VmConfig> readVmConfig() {
+        String path = Objects.requireNonNull(ExperimentUtil.class.getClassLoader().getResource("config/vm.json")).getPath();
+        JSONArray array = JSONUtil.readJSONArray(new File(path), CharsetUtil.CHARSET_UTF_8);
+        List<VmConfig> list = JSONUtil.toList(array, VmConfig.class);
+        list.forEach(vmConfig -> vmConfig.getFvConfigList().sort(Comparator.comparingDouble(FvConfig::getFrequency).reversed()));
+        return list;
+    }
+
+    public static List<Datacenter> createDatacenters() {
+        List<Datacenter> list = new ArrayList<>(); // Pre-allocate capacity
+        List<HostConfig> hostConfigList = readHostConfig();
+        int hostId = 0;
+        int peId = 0;
+        for (int i = 0; i < DCS; i++) {
+            List<Host> hostList = new ArrayList<>();
+            for (int j = 0; j < DC_HOSTS; j++) {
+                HostConfig hostConfig = hostConfigList.get(j % hostConfigList.size());
+                List<Pe> peList = new ArrayList<>();
+                for (int k = 0; k < hostConfig.getPes(); k++) {
+                    peList.add(new Pe(peId++, new PeProvisionerSimple(hostConfig.getMips())));
+                }
+                hostList.add(new Host(hostId++, new RamProvisionerSimple(HOST_RAM), new BwProvisionerSimple(HOST_BW), HOST_STORAGE, peList, new VmSchedulerSpaceShared(peList)));
+            }
+            DatacenterCharacteristics characteristics = new DatacenterCharacteristics(ARCH, OS, VMM, hostList, TIME_ZONE, COST_PER_SEC, COST_PER_MEM, COST_PER_STORAGE, COST_PER_BW);
+            try {
+                List<Double> elecPrice = new ArrayList<>(ELEC_PRICES.get(i % ELEC_PRICES.size()));
+                list.add(new WorkflowDatacenter(characteristics, new VmAllocationPolicySimple(hostList), new LinkedList<>(), DC_SCHEDULING_INTERVAL, elecPrice));
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+        return list;
+    }
+
+
+    /**
+     * create VMs
+     *
+     * @param userId the owner of the Vm
+     */
+    public static List<Vm> createVms(int userId) {
+        List<Vm> list = new ArrayList<>();
+        List<VmConfig> vmConfigList = readVmConfig();
+        //create VMs
+        for (int i = 0; i < VMS; i++) {
+            VmConfig vmConfig = vmConfigList.get(i % vmConfigList.size());
+            DvfsVm vm = new DvfsVm(i, userId, vmConfig.getMips(), vmConfig.getPes(), vmConfig.getFrequency(), VM_RAM, VM_BW, VM_SIZE, VMM, new DvfsCloudletSchedulerSpaceShared());
+            vm.setType(vmConfig.getName());
+            List<Fv> fvList = new ArrayList<>();
+            List<FvConfig> fvConfigList = vmConfig.getFvConfigList();
+            for (FvConfig fvConfig : fvConfigList) {
+                // smaller frequency, bigger lambda (transient fault rate)
+                double lambda = λ * Math.pow(10, (SR * (vmConfig.getFrequency() - fvConfig.getFrequency()) / (vmConfig.getFrequency() - fvConfigList.getLast().getFrequency())));
+                double mips = vmConfig.getMips() * fvConfig.getFrequency() / vmConfig.getFrequency();
+                int level = fvConfigList.indexOf(fvConfig);
+                Fv fv = new Fv()
+                        .setLevel(level)
+                        .setLambda(lambda).setType(vmConfig.getName() + "_" + level)
+                        .setVm(vm).setMips(mips).setFrequency(fvConfig.getFrequency()).setPower(fvConfig.getPower());
+                fvList.add(fv);
+            }
+            vm.setFvList(fvList);
+            list.add(vm);
+        }
+        return list;
+    }
 
 
     public static void printSimResult(List<Job> list) {
@@ -116,72 +190,6 @@ public class ExperimentUtil {
 
 
     /**
-     * create VMs
-     *
-     * @param userId the owner of the Vm
-     * @return
-     */
-    public static List<Vm> createVms(int userId) {
-        List<Vm> list = new ArrayList<>();
-        List<VmConfig> vmConfigList = readVmConfig();
-        //create VMs
-        for (int i = 0; i < VMS; i++) {
-            VmConfig vmConfig = vmConfigList.get(i % vmConfigList.size());
-            DvfsVm vm = new DvfsVm(i, userId, vmConfig.getMips(), vmConfig.getPes(), vmConfig.getFrequency(), VM_RAM, VM_BW, VM_SIZE, VMM, new DvfsCloudletSchedulerSpaceShared());
-            vm.setType(vmConfig.getName());
-            List<Fv> fvList = new ArrayList<>();
-            List<FvConfig> fvConfigList = vmConfig.getFvConfigList();
-            for (FvConfig fvConfig : fvConfigList) {
-                // smaller frequency, bigger lambda (transient fault rate)
-                double lambda = λ * Math.pow(10, (SR * (vmConfig.getFrequency() - fvConfig.getFrequency()) / (vmConfig.getFrequency() - fvConfigList.getLast().getFrequency())));
-                double mips = vmConfig.getMips() * fvConfig.getFrequency() / vmConfig.getFrequency();
-                int level = fvConfigList.indexOf(fvConfig);
-                Fv fv = new Fv()
-                        .setLevel(level)
-                        .setLambda(lambda).setType(vmConfig.getName() + "_" + level)
-                        .setVm(vm).setMips(mips).setFrequency(fvConfig.getFrequency()).setPower(fvConfig.getPower());
-                fvList.add(fv);
-            }
-            vm.setFvList(fvList);
-            list.add(vm);
-        }
-        return list;
-    }
-
-
-    /**
-     * create datacenters
-     *
-     * @return
-     */
-    public static List<Datacenter> createDatacenters() {
-        List<Datacenter> list = new ArrayList<>(); // Pre-allocate capacity
-        List<HostConfig> hostConfigList = readHostConfig();
-        int hostId = 0;
-        int peId = 0;
-        for (int i = 0; i < DCS; i++) {
-            List<Host> hostList = new ArrayList<>();
-            for (int j = 0; j < DC_HOSTS; j++) {
-                HostConfig hostConfig = hostConfigList.get(j % hostConfigList.size());
-                List<Pe> peList = new ArrayList<>();
-                for (int k = 0; k < hostConfig.getPes(); k++) {
-                    peList.add(new Pe(peId++, new PeProvisionerSimple(hostConfig.getMips())));
-                }
-                hostList.add(new Host(hostId++, new RamProvisionerSimple(HOST_RAM), new BwProvisionerSimple(HOST_BW), HOST_STORAGE, peList, new VmSchedulerSpaceShared(peList)));
-            }
-            DatacenterCharacteristics characteristics = new DatacenterCharacteristics(ARCH, OS, VMM, hostList, TIME_ZONE, COST_PER_SEC, COST_PER_MEM, COST_PER_STORAGE, COST_PER_BW);
-            try {
-                List<Double> elecPrice = new ArrayList<>(ELEC_PRICES.get(i % ELEC_PRICES.size()));
-                list.add(new WorkflowDatacenter(characteristics, new VmAllocationPolicySimple(hostList), new LinkedList<>(), DC_SCHEDULING_INTERVAL, elecPrice));
-            } catch (Exception e) {
-                e.printStackTrace();
-            }
-        }
-        return list;
-    }
-
-
-    /**
      * generate plan gantt data
      *
      * @param execWindowList
@@ -195,9 +203,9 @@ public class ExperimentUtil {
             taskList.add(new GanttTask().setId(job.getCloudletId()).setName(job.getName()).setStartTime(DateUtil.format(new Date(baseMilliseconds + Math.round(execWindow.getStartTime() * 1000)), "yyyy-MM-dd HH:mm:ss"))
                     .setEndTime(DateUtil.format(new Date(baseMilliseconds + Math.round(execWindow.getFinishTime() * 1000)), "yyyy-MM-dd HH:mm:ss")).setVmId(execWindow.getJob().getVm().getId()).setChildList(childList).setDepth(job.getDepth()));
         }
-        String jsonStr = JSONUtil.toJsonStr(taskList);
-        String path = System.getProperty("user.dir") + "\\data\\gantt\\" + str + "_pln.json";
-        FileUtil.writeString(jsonStr, path, "UTF-8");
+        String jsonStr = JSONUtil.toJsonPrettyStr(taskList);
+        String path = System.getProperty("user.dir") + File.separator + "data" + File.separator + "gantt" + File.separator + str + "_pln.json";
+        FileUtil.writeUtf8String(jsonStr, path);
     }
 
 
@@ -214,9 +222,33 @@ public class ExperimentUtil {
             taskList.add(new GanttTask().setId(job.getCloudletId()).setName(job.getName()).setStartTime(DateUtil.format(new Date(baseMilliseconds + Math.round(job.getExecStartTime() * 1000)), "yyyy-MM-dd HH:mm:ss"))
                     .setEndTime(DateUtil.format(new Date(baseMilliseconds + Math.round(job.getExecFinishTime() * 1000)), "yyyy-MM-dd HH:mm:ss")).setVmId(job.getGuestId()).setChildList(childList).setDepth(job.getDepth()));
         }
-        String jsonStr = JSONUtil.toJsonStr(taskList);
-        String path = System.getProperty("user.dir") + "\\data\\gantt\\" + str + "_sim.json";
-        FileUtil.writeString(jsonStr, path, "UTF-8");
+        String jsonStr = JSONUtil.toJsonPrettyStr(taskList);
+        String path = System.getProperty("user.dir") + File.separator + "data" + File.separator + "gantt" + File.separator + str + "_sim.json";
+        FileUtil.writeUtf8String(jsonStr, path);
+    }
+
+
+    public static void generateExperimentDate(List<SimStarter> list) {
+        generateExperimentDate(list, "result");
+    }
+
+
+    public static void generateExperimentDate(List<SimStarter> list, String str) {
+        List<Map<String, Object>> data = new ArrayList<>();
+        for (SimStarter simStarter : list) {
+            Map<String, Object> item = BeanUtil.beanToMap(simStarter.getParameter());
+            item.put("name", simStarter.getName());
+            item.put("daxPathList", simStarter.getDaxPathList());
+            item.put("elecCost", simStarter.getSimElecCost());
+            item.put("finishTime", simStarter.getSimFinishTime());
+            item.put("retryCount", simStarter.getRetryCount());
+            item.put("overdueCount", simStarter.getOverdueCount());
+            item.put("runtime", simStarter.getPlnRuntime());
+            data.add(item);
+        }
+        String jsonStr = JSONUtil.toJsonPrettyStr(data);
+        String path = System.getProperty("user.dir") + File.separator + "data" + File.separator + "experiment" + File.separator + str + ".json";
+        FileUtil.writeUtf8String(jsonStr, path);
     }
 
 
@@ -239,9 +271,10 @@ public class ExperimentUtil {
         return host.getDatacenter().getId() == parentHost.getDatacenter().getId() ? dataSize / INTRA_BANDWIDTH : dataSize / INTER_BANDWIDTH;
     }
 
-    /**
-     * calculate electricity cost
-     */
+    public static double calculateReliability(double lambda, double duration) {
+        return Math.exp(-lambda * duration);
+    }
+
     public static double calculateElecCost(List<Double> elecPrice, double startTime, double endTime, double power) {
         double totalCost = 0.0;
         double currentTime = startTime / 3600.0;
@@ -259,19 +292,9 @@ public class ExperimentUtil {
     }
 
 
-    private static List<HostConfig> readHostConfig() {
-        String path = Objects.requireNonNull(ExperimentUtil.class.getClassLoader().getResource("config/host.json")).getPath();
-        JSONArray array = JSONUtil.readJSONArray(new File(path), CharsetUtil.CHARSET_UTF_8);
-        return JSONUtil.toList(array, HostConfig.class);
-    }
-
-
-    private static List<VmConfig> readVmConfig() {
-        String path = Objects.requireNonNull(ExperimentUtil.class.getClassLoader().getResource("config/vm.json")).getPath();
-        JSONArray array = JSONUtil.readJSONArray(new File(path), CharsetUtil.CHARSET_UTF_8);
-        List<VmConfig> list = JSONUtil.toList(array, VmConfig.class);
-        list.forEach(vmConfig -> vmConfig.getFvConfigList().sort(Comparator.comparingDouble(FvConfig::getFrequency).reversed()));
-        return list;
+    public List<Double> calculateRPD(List<SimStarter> list) {
+        double best = list.stream().mapToDouble(SimStarter::getPlnElecCost).min().getAsDouble();
+        return list.stream().mapToDouble(simStarter -> roundToScale((simStarter.getPlnElecCost() - best) / best, 3)).boxed().toList();
     }
 
 

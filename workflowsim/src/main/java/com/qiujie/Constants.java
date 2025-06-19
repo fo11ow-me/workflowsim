@@ -1,13 +1,11 @@
 package com.qiujie;
 
-import ch.qos.logback.classic.Level;
 import com.qiujie.comparator.*;
 import com.qiujie.enums.JobSequenceStrategyEnum;
 import generator.app.Application;
 import generator.app.CyberShake;
 import generator.app.Montage;
 import org.cloudbus.cloudsim.distributions.ContinuousDistribution;
-import org.slf4j.Marker;
 
 import java.util.List;
 
@@ -54,7 +52,7 @@ public class Constants {
     public static final long HOST_BW = 10000;
     public static final long HOST_STORAGE = 1000000; // MEGA
 
-    public static int VMS = 300;
+    public static int VMS = 200;
 
     public static final int VM_RAM = 512; // MEGA
     public static final long VM_BW = 1000;
@@ -73,7 +71,7 @@ public class Constants {
     public static ContinuousDistribution RANDOM;
     // data
     public static List<Class<? extends Application>> APP_LIST = List.of(Montage.class, CyberShake.class);
-    public static List<Integer> JOB_NUM_LIST = List.of(50, 100, 200, 400, 800);
+    public static List<Integer> JOB_NUM_LIST = List.of(25, 50, 100, 200, 400);
     public static List<Integer> INSTANCE_NUM_LIST = List.of(20, 40, 60, 80, 100);
     //  List of parameter ranges
     public static final List<Class<? extends WorkflowComparatorInterface>> WORKFLOW_COMPARATOR_LIST = List.of(DefaultComparator.class, DepthComparator.class, JobNumComparator.class, LengthComparator.class);
@@ -97,5 +95,7 @@ public class Constants {
     public static int MAX_RETRY_COUNT = 10;
 
     public static boolean ENABLE_STARTUP = true;
+
+    public static int REPEAT_TIMES = 10;
 
 }
