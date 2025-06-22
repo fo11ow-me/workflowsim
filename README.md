@@ -16,5 +16,7 @@
 
 - Supports multiple levels of logging.
 - Supports printing of simulation and experimental results to the console.
+- Support multi-factor ANOVA
+- Support parallel simulation
 
 

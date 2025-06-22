@@ -10,7 +10,7 @@ package org.cloudbus.cloudsim.network;
 
 /**
  * This class represents an link (edge) from a network graph.
- * 
+ *
  * @author Thomas Hohnstein
  * @since CloudSim Toolkit 1.0
  */
@@ -40,7 +40,7 @@ public class TopologicalLink {
 	 * Creates a new Topological Link.
 	 */
 	public TopologicalLink(int srcNode, int destNode, float delay, float bw) {
-		// lets initialize all internal attributes
+		// lets init all internal attributes
 		linkDelay = delay;
 		srcNodeID = srcNode;
 		destNodeID = destNode;
@@ -49,7 +49,7 @@ public class TopologicalLink {
 
 	/**
 	 * Gets the BRITE id of the source node of the link.
-	 * 
+	 *
 	 * @return nodeID
 	 */
 	public int getSrcNodeID() {
@@ -58,7 +58,7 @@ public class TopologicalLink {
 
 	/**
 	 * Gets the BRITE id of the destination node of the link.
-	 * 
+	 *
 	 * @return nodeID
 	 */
 	public int getDestNodeID() {
@@ -67,7 +67,7 @@ public class TopologicalLink {
 
 	/**
 	 * Gets the delay of the link.
-	 * 
+	 *
 	 * @return the link delay
 	 */
 	public float getLinkDelay() {
@@ -76,7 +76,7 @@ public class TopologicalLink {
 
 	/**
 	 * Gets the bandwidth of the link.
-	 * 
+	 *
 	 * @return the bw
 	 */
 	public float getLinkBw() {

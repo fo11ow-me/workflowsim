@@ -9,11 +9,18 @@ import org.cloudbus.cloudsim.Cloudlet;
 import org.cloudbus.cloudsim.CloudletSchedulerSpaceShared;
 import org.cloudbus.cloudsim.Consts;
 import org.cloudbus.cloudsim.core.CloudSim;
+import org.cloudbus.cloudsim.distributions.ContinuousDistribution;
 
 import java.util.List;
 
 @Slf4j
 public class DvfsCloudletSchedulerSpaceShared extends CloudletSchedulerSpaceShared {
+
+    private final ContinuousDistribution random;
+
+    public DvfsCloudletSchedulerSpaceShared(ContinuousDistribution random) {
+        this.random = random;
+    }
 
 
     @Override
@@ -40,7 +47,7 @@ public class DvfsCloudletSchedulerSpaceShared extends CloudletSchedulerSpaceShar
                 execTimeSpan = Math.max(0, timeSpan - (transferLength - prevFinishedLength) / (totalCurrentAllocatedMips * Consts.MILLION));
             }
             double reliability = ExperimentUtil.calculateReliability(job.getFv().getLambda(), execTimeSpan);
-            if (RANDOM.sample() < 1 - reliability && job.canRetry()) {
+            if (random.sample() < 1 - reliability && job.canRetry()) {
                 job.setCloudletLength(job.getCloudletFinishedSoFar() / Consts.MILLION + job.getLength());
                 job.updateRetryCount();
                 log.warn("{}: Retry {} for Job #{} {}", CloudSim.clock(), job.getRetryCount(), job.getCloudletId(), job.getName());

@@ -4,6 +4,7 @@ package com.qiujie.example;
 import ch.qos.logback.classic.Level;
 import com.qiujie.aop.ClockModifier;
 import com.qiujie.entity.Job;
+import com.qiujie.entity.Parameter;
 import com.qiujie.entity.Workflow;
 import com.qiujie.core.WorkflowBroker;
 import com.qiujie.planner.HEFTPlanner;
@@ -13,6 +14,7 @@ import com.qiujie.util.WorkflowParser;
 import org.cloudbus.cloudsim.Datacenter;
 import org.cloudbus.cloudsim.Vm;
 import org.cloudbus.cloudsim.core.CloudSim;
+import org.cloudbus.cloudsim.distributions.ContinuousDistribution;
 import org.cloudbus.cloudsim.distributions.UniformDistr;
 
 import java.util.Calendar;
@@ -27,7 +29,7 @@ import static com.qiujie.Constants.*;
 public class Example03 {
     public static void main(String[] args) throws Exception {
         long send = System.currentTimeMillis();
-        RANDOM = new UniformDistr(0, 1, send);
+        ContinuousDistribution random = new UniformDistr(0, 1, send);
         ClockModifier.modifyClockMethod();
         org.cloudbus.cloudsim.Log.disable();
         CloudSim.init(2, Calendar.getInstance(), TRACE_FLAG);
@@ -68,14 +70,14 @@ public class Example03 {
 
         List<Datacenter> datacenterList = ExperimentUtil.createDatacenters();
 
-        WorkflowBroker broker = new WorkflowBroker(HEFTPlanner.class);
-        List<Vm> vmList = ExperimentUtil.createVms(broker.getId());
+        WorkflowBroker broker = new WorkflowBroker(random, new HEFTPlanner(random, new Parameter()));
+        List<Vm> vmList = ExperimentUtil.createVms(random, broker.getId());
         broker.submitGuestList(vmList);
         List<Workflow> workflowList = daxPathList.stream().map(WorkflowParser::parse).toList();
         broker.submitWorkflowList(workflowList);
 
-        WorkflowBroker broker1 = new WorkflowBroker(HEFTPlanner.class);
-        List<Vm> vmList1 = ExperimentUtil.createVms(broker1.getId());
+        WorkflowBroker broker1 = new WorkflowBroker(random, new HEFTPlanner(random, new Parameter()));
+        List<Vm> vmList1 = ExperimentUtil.createVms(random, broker1.getId());
         broker1.submitGuestList(vmList1);
         List<Workflow> workflowList1 = daxPathList1.stream().map(WorkflowParser::parse).toList();
         broker1.submitWorkflowList(workflowList1);
@@ -83,13 +85,12 @@ public class Example03 {
         CloudSim.startSimulation();
 
         List<Job> cloudletReceivedList = broker.getCloudletReceivedList();
-        ExperimentUtil.printSimResult(cloudletReceivedList,  broker.getName());
-        ExperimentUtil.generateSimGanttData(cloudletReceivedList, broker.getName());
+        ExperimentUtil.printSimResult(cloudletReceivedList, broker.getName());
+        ExperimentUtil.generateSimData(cloudletReceivedList, broker.getName());
 
         List<Job> cloudletReceivedList1 = broker1.getCloudletReceivedList();
-        ExperimentUtil.printSimResult(cloudletReceivedList1,  broker1.getName());
-        ExperimentUtil.generateSimGanttData(cloudletReceivedList1, broker1.getName());
-
+        ExperimentUtil.printSimResult(cloudletReceivedList1, broker1.getName());
+        ExperimentUtil.generateSimData(cloudletReceivedList1, broker1.getName());
 
 
         String className = new Object() {

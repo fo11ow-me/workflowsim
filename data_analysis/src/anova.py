@@ -33,11 +33,11 @@ def save_plot(dataframe, group_var, target_var, path):
     plt.close()
 
 
-def run_anova(json_path=None,
-              data=None,
-              target_variable="elecCost",
-              group_variables=None,
-              output_dir="..\\data\\anova"):
+def run(json_path=None,
+        data=None,
+        target_variable="elecCost",
+        group_variables=None,
+        output_dir=None):
     """
     Run one-way or multi-way ANOVA, save results, plot and export boxplots.
 

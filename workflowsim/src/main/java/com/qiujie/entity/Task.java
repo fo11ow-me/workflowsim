@@ -10,7 +10,7 @@ import java.util.List;
 
 @Accessors(chain = true)
 @Data
-public class GanttTask implements Serializable {
+public class Task implements Serializable {
 
     @Serial
     private static final long serialVersionUID = 1L;

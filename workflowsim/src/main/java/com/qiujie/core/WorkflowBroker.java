@@ -11,11 +11,11 @@ import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.cloudbus.cloudsim.*;
 import org.cloudbus.cloudsim.core.*;
+import org.cloudbus.cloudsim.distributions.ContinuousDistribution;
 import org.cloudbus.cloudsim.lists.VmList;
 
 import java.util.*;
 
-import static com.qiujie.Constants.SIM_NAME;
 
 /**
  * WorkflowBroker
@@ -25,33 +25,20 @@ import static com.qiujie.Constants.SIM_NAME;
 @Slf4j
 public class WorkflowBroker extends DatacenterBroker {
 
-    @Getter
-    private final List<Workflow> workflowList;
+    private final ContinuousDistribution random;
 
     private final WorkflowPlannerAbstract planner;
+    @Getter
+    private List<Workflow> workflowList;
 
-    public WorkflowBroker(Class<? extends WorkflowPlannerAbstract> clazz, Parameter parameter) throws Exception {
+
+    public WorkflowBroker(ContinuousDistribution random, WorkflowPlannerAbstract planner) throws Exception {
         super(WorkflowBroker.class.getSimpleName() + "_#" + CloudSim.getEntityList().size());
-        this.planner = clazz.getDeclaredConstructor().newInstance();
-        this.planner.setParameter(parameter);
+        this.random = random;
+        this.planner = planner;
         this.workflowList = new ArrayList<>();
     }
 
-    public WorkflowBroker(Class<? extends WorkflowPlannerAbstract> clazz) throws Exception {
-        this(clazz, new Parameter());
-    }
-
-    public double getPlnElecCost() {
-        return planner.getElecCost();
-    }
-
-    public double getPlnFinishTime() {
-        return planner.getFinishTime();
-    }
-
-    public double getPlnRuntime() {
-        return planner.getRuntime();
-    }
 
     public void submitWorkflowList(List<Workflow> workflowList) {
         this.workflowList.addAll(workflowList);
@@ -153,7 +140,7 @@ public class WorkflowBroker extends DatacenterBroker {
             // if user didn't bind this cloudlet and it has not been executed yet
             if (cloudlet.getGuestId() == -1) {
                 // randomly select a VM
-                vm = ExperimentUtil.getRandomElement(getGuestsCreatedList());
+                vm = ExperimentUtil.getRandomElement(random, getGuestsCreatedList());
             } else { // submit to the specific vm
                 vm = VmList.getById(getGuestsCreatedList(), cloudlet.getGuestId());
                 if (vm == null) { // vm was not created
@@ -175,6 +162,17 @@ public class WorkflowBroker extends DatacenterBroker {
         }
         // remove submitted cloudlets from waiting list
         getCloudletList().removeAll(successfullySubmitted);
+    }
+
+
+    @Override
+    protected void clearDatacenters() {
+        for (GuestEntity vm : getGuestsCreatedList()) {
+            log.info("{}: {}: Destroying {} #{}", CloudSim.clock(), getName(), vm.getClassName(), vm.getId());
+            sendNow(getVmsToDatacentersMap().get(vm.getId()), CloudActionTags.VM_DESTROY, vm);
+        }
+
+        getGuestsCreatedList().clear();
     }
 
 
@@ -221,7 +219,7 @@ public class WorkflowBroker extends DatacenterBroker {
             for (Job job : workflow.getJobList()) {
                 job.setUserId(getId());
                 for (File file : job.getLocalInputFileList()) {
-                    file.setHost(ExperimentUtil.getRandomElement(getGuestsCreatedList()).getHost());
+                    file.setHost(ExperimentUtil.getRandomElement(random, getGuestsCreatedList()).getHost());
                 }
             }
         }

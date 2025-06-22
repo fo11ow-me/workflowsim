@@ -1,5 +1,6 @@
 package com.qiujie.planner;
 
+import com.qiujie.comparator.WorkflowComparatorInterface;
 import com.qiujie.core.WorkflowDatacenter;
 import com.qiujie.entity.*;
 import com.qiujie.util.ExperimentUtil;
@@ -7,10 +8,10 @@ import lombok.extern.slf4j.Slf4j;
 import org.cloudbus.cloudsim.Host;
 import org.cloudbus.cloudsim.Vm;
 import org.cloudbus.cloudsim.core.CloudSim;
+import org.cloudbus.cloudsim.distributions.ContinuousDistribution;
 
 import java.util.*;
 
-import static com.qiujie.Constants.SIM_NAME;
 
 /**
  * The Random planning algorithm
@@ -23,11 +24,24 @@ public class RandomPlanner extends WorkflowPlannerAbstract {
     private Map<Job, Double> eftMap;
     private Map<Job, Double> upwardRankMap;
 
+    public RandomPlanner(ContinuousDistribution random, Parameter parameter) {
+        super(random, parameter);
+    }
+
+    public void init() throws Exception {
+        Class<? extends WorkflowComparatorInterface> clazz =
+                (Class<? extends WorkflowComparatorInterface>) Class.forName(getParameter().getWorkflowComparator());
+        WorkflowComparatorInterface comparatorInterface = clazz.getDeclaredConstructor().newInstance();
+        Comparator<Workflow> workflowComparator = comparatorInterface.get(getParameter().isAscending());
+        getWorkflowList().sort(workflowComparator);
+    }
+
     /**
      * The main function
      */
     @Override
-    public void run() {
+    public void run() throws Exception {
+        init();
         for (Workflow workflow : getWorkflowList()) {
             calculateUpwardRank(workflow);
             calculateExecutionTimeAndReliability(workflow);
@@ -102,7 +116,7 @@ public class RandomPlanner extends WorkflowPlannerAbstract {
      * allocate jobs
      */
     private void allocateJobs(Workflow workflow) {
-        log.info("{}: {}: Starting planning workflow #{} {}, a total of {} Jobs...", CloudSim.clock(), SIM_NAME, workflow.getId(), workflow.getName(), workflow.getJobNum());
+        log.info("{}: {}: Starting planning workflow #{} {}, a total of {} Jobs...", CloudSim.clock(), this, workflow.getId(), workflow.getName(), workflow.getJobNum());
         List<Job> sequence = workflow.getJobList().stream().sorted(Comparator.comparingDouble(upwardRankMap::get).reversed()).toList();
         eftMap = new HashMap<>();
         Solution solution = new Solution();
@@ -137,7 +151,7 @@ public class RandomPlanner extends WorkflowPlannerAbstract {
         getSequence().addAll(solution.getSequence());
         setElecCost(getElecCost() + solution.getElecCost());
         setFinishTime(Math.max(getFinishTime(), solution.getFinishTime()));
-        log.debug(String.format("%.2f: %s: %s: Best %s", CloudSim.clock(), SIM_NAME, workflow.getName(), solution));
+        log.debug(String.format("%.2f: %s: %s: Best %s", CloudSim.clock(), this, workflow.getName(), solution));
 
     }
 
@@ -149,7 +163,7 @@ public class RandomPlanner extends WorkflowPlannerAbstract {
      */
     private double allocateJob(Job job, Solution solution, Map<Vm, List<ExecWindow>> execWindowMap) {
         double beginTime = job.getParentList().isEmpty() ? 0 : job.getParentList().stream().mapToDouble(eftMap::get).min().getAsDouble();
-        Vm vm = ExperimentUtil.getRandomElement(getVmList());
+        Vm vm = ExperimentUtil.getRandomElement(getRandom(), getVmList());
         DvfsVm dvfsVm = (DvfsVm) vm;
         double max = 0;
         for (Job parent : job.getParentList()) {
@@ -159,7 +173,7 @@ public class RandomPlanner extends WorkflowPlannerAbstract {
             max = Math.max(max, eftMap.get(parent) + ExperimentUtil.calculatePredecessorDataTransferTime(job, (Host) dvfsVm.getHost(), parent, (Host) solution.getResult().get(parent).getVm().getHost()));
         }
         double readyTime = max + localDataTransferTimeMap.get(job).get(dvfsVm);
-        Fv fv = ExperimentUtil.getRandomElement(dvfsVm.getFvList());
+        Fv fv = ExperimentUtil.getRandomElement(getRandom(), dvfsVm.getFvList());
         double eft = findEFT(job, fv, readyTime, execTimeMap, true, execWindowMap);
         WorkflowDatacenter dc = (WorkflowDatacenter) fv.getVm().getDatacenter();
         List<Double> elecPrice = dc.getElecPrice();

@@ -4,6 +4,7 @@ package com.qiujie.example;
 import ch.qos.logback.classic.Level;
 import com.qiujie.aop.ClockModifier;
 import com.qiujie.entity.Job;
+import com.qiujie.entity.Parameter;
 import com.qiujie.entity.Workflow;
 import com.qiujie.core.WorkflowBroker;
 import com.qiujie.planner.HEFTPlanner;
@@ -12,6 +13,7 @@ import com.qiujie.util.Log;
 import com.qiujie.util.WorkflowParser;
 import org.cloudbus.cloudsim.Vm;
 import org.cloudbus.cloudsim.core.CloudSim;
+import org.cloudbus.cloudsim.distributions.ContinuousDistribution;
 import org.cloudbus.cloudsim.distributions.UniformDistr;
 
 import java.util.Calendar;
@@ -26,7 +28,7 @@ import static com.qiujie.Constants.*;
 public class Example02 {
     public static void main(String[] args) throws Exception {
         long send = System.currentTimeMillis();
-        RANDOM = new UniformDistr(0, 1, send);
+        ContinuousDistribution random = new UniformDistr(0, 1, send);
         ClockModifier.modifyClockMethod();
         org.cloudbus.cloudsim.Log.disable();
         CloudSim.init(USERS, Calendar.getInstance(), TRACE_FLAG);
@@ -49,9 +51,9 @@ public class Example02 {
         // create datacenters
         ExperimentUtil.createDatacenters();
         // create broker
-        WorkflowBroker broker = new WorkflowBroker(HEFTPlanner.class);
+        WorkflowBroker broker = new WorkflowBroker(random , new HEFTPlanner(random,new Parameter()));
         // submit vms
-        List<Vm> vmList = ExperimentUtil.createVms(broker.getId());
+        List<Vm> vmList = ExperimentUtil.createVms(random,broker.getId());
         broker.submitGuestList(vmList);
         // submit workflows
         List<Workflow> workflowList = daxPathList.stream().map(WorkflowParser::parse).toList();
@@ -68,8 +70,8 @@ public class Example02 {
         String className = new Object() {
         }.getClass().getEnclosingClass().getSimpleName();
 
-        ExperimentUtil.generateSimGanttData(cloudletReceivedList, className + "_" + broker.getName());
-        ExperimentUtil.generateSimGanttData(cloudletReceivedList, className + "_" + broker.getName());
+        ExperimentUtil.generateSimData(cloudletReceivedList, className + "_" + broker.getName());
+        ExperimentUtil.generateSimData(cloudletReceivedList, className + "_" + broker.getName());
 
         System.out.println(className + " task " + (System.currentTimeMillis() - send) / 1000.0 + "s");
     }

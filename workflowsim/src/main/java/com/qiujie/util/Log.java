@@ -68,7 +68,8 @@ public final class Log {
      */
     public static void setLevel(final Level level) {
         if (level == Level.OFF) {
-            Constants.ENABLE_STARTUP = false;
+            Constants.ENABLE_STARTUP_SIM = false;
+            Constants.ENABLE_RESULT_SIM = false;
         }
         final var root = LoggerFactory.getLogger(Logger.ROOT_LOGGER_NAME);
         setLevel(root, level);

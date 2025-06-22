@@ -1,17 +1,25 @@
 package com.qiujie;
 
+import ch.qos.logback.classic.Level;
 import com.qiujie.comparator.*;
 import com.qiujie.enums.JobSequenceStrategyEnum;
 import generator.app.Application;
 import generator.app.CyberShake;
 import generator.app.Montage;
-import org.cloudbus.cloudsim.distributions.ContinuousDistribution;
 
+import java.io.File;
 import java.util.List;
 
 public class Constants {
 
-    public static String SIM_NAME = "Sim";
+
+    public static final String PARAM_DIR = System.getProperty("user.dir") + File.separator + "tmp" + File.separator + "params" + File.separator;
+    public static final String RESULT_DIR = System.getProperty("user.dir") + File.separator + "tmp" + File.separator + "results" + File.separator;
+    public static final String SIM_DATA_DIR = System.getProperty("user.dir") + File.separator + "data" + File.separator + "sim" + File.separator;
+    public static final String EXPERIMENT_DATA_DIR = System.getProperty("user.dir") + File.separator + "data" + File.separator + "experiment" + File.separator;
+
+
+    public static final Level LEVEL = Level.DEBUG;
 
     public static final int USERS = 1;
     public static final boolean TRACE_FLAG = false;
@@ -68,7 +76,6 @@ public class Constants {
 
     public static double LENGTH_FACTOR = 1e3;
 
-    public static ContinuousDistribution RANDOM;
     // data
     public static List<Class<? extends Application>> APP_LIST = List.of(Montage.class, CyberShake.class);
     public static List<Integer> JOB_NUM_LIST = List.of(25, 50, 100, 200, 400);
@@ -94,7 +101,9 @@ public class Constants {
 
     public static int MAX_RETRY_COUNT = 10;
 
-    public static boolean ENABLE_STARTUP = true;
+    public static boolean ENABLE_STARTUP_SIM = true;
+    public static boolean ENABLE_RESULT_SIM = true;
+    public static boolean ENABLE_SIM_DATA = false;
 
     public static int REPEAT_TIMES = 10;
 

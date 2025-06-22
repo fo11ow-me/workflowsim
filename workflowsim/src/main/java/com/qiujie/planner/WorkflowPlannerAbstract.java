@@ -11,6 +11,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.cloudbus.cloudsim.Host;
 import org.cloudbus.cloudsim.Vm;
 import org.cloudbus.cloudsim.core.CloudSim;
+import org.cloudbus.cloudsim.distributions.ContinuousDistribution;
 
 import java.util.*;
 import java.util.function.Function;
@@ -21,9 +22,11 @@ import static com.qiujie.Constants.*;
 @Slf4j
 public abstract class WorkflowPlannerAbstract {
 
-    @Setter
     @Getter
-    private Parameter parameter;
+    private final ContinuousDistribution random;
+
+    @Getter
+    private final Parameter parameter;
 
     @NonNull
     @Setter
@@ -56,7 +59,9 @@ public abstract class WorkflowPlannerAbstract {
     private double runtime;
 
 
-    WorkflowPlannerAbstract() {
+    public WorkflowPlannerAbstract(ContinuousDistribution random, Parameter parameter) {
+        this.random = random;
+        this.parameter = parameter;
         sequence = new ArrayList<>();
         execWindowMap = new HashMap<>();
         elecCost = 0;
@@ -65,13 +70,13 @@ public abstract class WorkflowPlannerAbstract {
 
 
     public void start() {
-        log.info("{}: {}: Starting planning...", CloudSim.clock(), SIM_NAME);
+        log.info("{}: {}: Starting planning...", CloudSim.clock(), this);
         long start = System.currentTimeMillis();
         try {
             run();
             long end = System.currentTimeMillis();
             this.runtime = (end - start) / 1000.0;
-            log.info("{}: {}: Running {}s", CloudSim.clock(), SIM_NAME, this.runtime);
+            log.info("{}: {}: Running {}s", CloudSim.clock(), this, this.runtime);
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -272,5 +277,8 @@ public abstract class WorkflowPlannerAbstract {
         return initialSequence;
     }
 
-
+    @Override
+    public String toString() {
+        return ExperimentUtil.getPrefixFromClassName(getClass().getName()) + parameter;
+    }
 }

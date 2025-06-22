@@ -1,5 +1,6 @@
 package com.qiujie.planner;
 
+import com.qiujie.comparator.WorkflowComparatorInterface;
 import com.qiujie.core.WorkflowDatacenter;
 import com.qiujie.entity.*;
 import com.qiujie.util.ExperimentUtil;
@@ -7,10 +8,10 @@ import lombok.extern.slf4j.Slf4j;
 import org.cloudbus.cloudsim.Host;
 import org.cloudbus.cloudsim.Vm;
 import org.cloudbus.cloudsim.core.CloudSim;
+import org.cloudbus.cloudsim.distributions.ContinuousDistribution;
 
 import java.util.*;
 
-import static com.qiujie.Constants.SIM_NAME;
 
 /**
  * Performance-effective and low-complexity task scheduling for heterogeneous computing
@@ -24,11 +25,25 @@ public class HEFTPlanner extends WorkflowPlannerAbstract {
     private Map<Job, Double> eftMap;
     private Map<Job, Double> upwardRankMap;
 
+    public HEFTPlanner(ContinuousDistribution random, Parameter parameter) {
+        super(random, parameter);
+    }
+
+
+    public void init() throws Exception {
+        Class<? extends WorkflowComparatorInterface> clazz =
+                (Class<? extends WorkflowComparatorInterface>) Class.forName(getParameter().getWorkflowComparator());
+        WorkflowComparatorInterface comparatorInterface = clazz.getDeclaredConstructor().newInstance();
+        Comparator<Workflow> workflowComparator = comparatorInterface.get(getParameter().isAscending());
+        getWorkflowList().sort(workflowComparator);
+    }
+
     /**
      * The main function
      */
     @Override
-    public void run() {
+    public void run() throws Exception {
+        init();
         for (Workflow workflow : getWorkflowList()) {
             calculateUpwardRank(workflow);
             calculateExecutionTimeAndReliability(workflow);
@@ -102,7 +117,7 @@ public class HEFTPlanner extends WorkflowPlannerAbstract {
      * allocate jobs
      */
     private void allocateJobs(Workflow workflow) {
-        log.info("{}: {}: Starting planning workflow #{} {}, a total of {} Jobs...", CloudSim.clock(),SIM_NAME, workflow.getId(), workflow.getName(), workflow.getJobNum());
+        log.info("{}: {}: Starting planning workflow #{} {}, a total of {} Jobs...", CloudSim.clock(), this, workflow.getId(), workflow.getName(), workflow.getJobNum());
         List<Job> sequence = workflow.getJobList().stream().sorted(Comparator.comparingDouble(upwardRankMap::get).reversed()).toList();
         eftMap = new HashMap<>();
         Solution solution = new Solution();
@@ -137,7 +152,7 @@ public class HEFTPlanner extends WorkflowPlannerAbstract {
         getSequence().addAll(solution.getSequence());
         setElecCost(getElecCost() + solution.getElecCost());
         setFinishTime(Math.max(getFinishTime(), solution.getFinishTime()));
-        log.debug(String.format("%.2f: %s: %s: Best %s", CloudSim.clock(),SIM_NAME, workflow.getName(), solution));
+        log.debug(String.format("%.2f: %s: %s: Best %s", CloudSim.clock(), this, workflow.getName(), solution));
 
     }
 

@@ -19,11 +19,15 @@ public class LogMarkerFilter extends TurboFilter {
 
         String markerName = marker.getName();
 
-        if (LevelEnum.STARTUP.name().equals(markerName)) {
-            return Constants.ENABLE_STARTUP ? FilterReply.ACCEPT : FilterReply.DENY;
+        if (LevelEnum.STARTUP_SIM.name().equals(markerName)) {
+            return Constants.ENABLE_STARTUP_SIM ? FilterReply.ACCEPT : FilterReply.DENY;
         }
 
-        if (LevelEnum.BOOT.name().equals(markerName) || LevelEnum.RESULT.name().equals(markerName)) {
+        if (LevelEnum.RESULT_SIM.name().equals(markerName)) {
+            return Constants.ENABLE_RESULT_SIM ? FilterReply.ACCEPT : FilterReply.DENY;
+        }
+
+        if (LevelEnum.STARTUP_EXPERIMENT.name().equals(markerName) || LevelEnum.RESULT_EXPERIMENT.name().equals(markerName)) {
             return FilterReply.ACCEPT;
         }
 

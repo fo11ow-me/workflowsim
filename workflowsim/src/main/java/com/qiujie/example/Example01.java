@@ -3,6 +3,7 @@ package com.qiujie.example;
 import ch.qos.logback.classic.Level;
 import com.qiujie.aop.ClockModifier;
 import com.qiujie.entity.Job;
+import com.qiujie.entity.Parameter;
 import com.qiujie.entity.Workflow;
 import com.qiujie.core.WorkflowBroker;
 import com.qiujie.planner.RandomPlanner;
@@ -12,6 +13,7 @@ import com.qiujie.util.WorkflowParser;
 import org.cloudbus.cloudsim.Datacenter;
 import org.cloudbus.cloudsim.Vm;
 import org.cloudbus.cloudsim.core.CloudSim;
+import org.cloudbus.cloudsim.distributions.ContinuousDistribution;
 import org.cloudbus.cloudsim.distributions.UniformDistr;
 
 import java.util.Calendar;
@@ -46,15 +48,15 @@ public class Example01 {
         // basic parameters
 
 
-        RANDOM = new UniformDistr(0, 1, send);
+        ContinuousDistribution random = new UniformDistr(0, 1, send);
         LENGTH_FACTOR = 1e5;
 
         // create datacenters
         List<Datacenter> datacenterList = ExperimentUtil.createDatacenters();
         // create broker
-        WorkflowBroker broker = new WorkflowBroker(RandomPlanner.class);
+        WorkflowBroker broker = new WorkflowBroker(random, new RandomPlanner(random, new Parameter()));
         // submit vms
-        List<Vm> vmList = ExperimentUtil.createVms(broker.getId());
+        List<Vm> vmList = ExperimentUtil.createVms(random, broker.getId());
         broker.submitGuestList(vmList);
         // submit workflows
         Workflow workflow = WorkflowParser.parse(daxPath);
@@ -69,7 +71,7 @@ public class Example01 {
         // print result
         ExperimentUtil.printSimResult(cloudletReceivedList, broker.getName());
         // generate gantt chart data
-        ExperimentUtil.generateSimGanttData(cloudletReceivedList, className + "_" + broker.getName());
+        ExperimentUtil.generateSimData(cloudletReceivedList, className + "_" + broker.getName());
         System.out.println(className + " task " + (System.currentTimeMillis() - send) / 1000.0 + "s");
     }
 }

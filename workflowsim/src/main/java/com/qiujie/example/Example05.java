@@ -2,13 +2,13 @@
 package com.qiujie.example;
 
 import ch.qos.logback.classic.Level;
+import com.qiujie.comparator.DefaultComparator;
+import com.qiujie.comparator.LengthComparator;
 import com.qiujie.entity.Parameter;
+import com.qiujie.entity.SimParameter;
 import com.qiujie.starter.ExperimentStarter;
-import com.qiujie.starter.SimStarter;
 import com.qiujie.planner.*;
-import com.qiujie.util.ExperimentUtil;
 import com.qiujie.util.Log;
-import org.cloudbus.cloudsim.distributions.UniformDistr;
 
 import java.util.List;
 
@@ -16,7 +16,7 @@ import static com.qiujie.Constants.MAX_RETRY_COUNT;
 
 
 /**
- * Algorithm comparison
+ * parallel simulation
  *
  * @author qiujie
  */
@@ -29,7 +29,8 @@ public class Example05 extends ExperimentStarter {
 
 
     @Override
-    public void run() throws Exception {
+    protected void init() {
+        Log.setLevel(Level.DEBUG);
         List<String> daxPathList = List.of(
                 "data/dax/CyberShake_25.xml"
                 , "data/dax/CyberShake_50.xml"
@@ -45,16 +46,8 @@ public class Example05 extends ExperimentStarter {
                 , "data/dax/Montage_500.xml"
         );
 
-        MAX_RETRY_COUNT = 10;
-
-        List<SimStarter> simStarterList = List.of(
-                new SimStarter(new UniformDistr(0, 1, seed), daxPathList, HEFTPlanner.class, new Parameter())
-                , new SimStarter(new UniformDistr(0, 1, seed), daxPathList, RandomPlanner.class, new Parameter())
-        );
-
-        simStarterList.forEach(SimStarter::printSimResult);
-        simStarterList.forEach(SimStarter::generateSimGanttData);
-
-        ExperimentUtil.printExperimentResult(simStarterList);
+        addParam(new SimParameter(name, seed, daxPathList, RandomPlanner.class, new Parameter().setWorkflowComparator(DefaultComparator.class).setAscending(true)));
+        addParam(new SimParameter(name, seed, daxPathList, RandomPlanner.class, new Parameter().setWorkflowComparator(LengthComparator.class).setAscending(false)));
+        addParam(new SimParameter(name, seed, daxPathList, HEFTPlanner.class, new Parameter().setWorkflowComparator(DefaultComparator.class).setAscending(true)));
     }
 }
