@@ -182,13 +182,15 @@
             <systemPath>${project.basedir}/lib/pegasus.jar</systemPath>
         </dependency>
 
-
+        <!--
+  If this dependency does not exist in your local Maven repository,
+  you can safely comment it out. This will not affect the project functionality.
+-->
         <dependency>
             <groupId>org.griphyn</groupId>
             <artifactId>pegasus</artifactId>
             <version>3.0</version>
         </dependency>
-
 
 
     </dependencies>
