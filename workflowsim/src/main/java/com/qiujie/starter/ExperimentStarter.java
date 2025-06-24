@@ -55,11 +55,7 @@ public abstract class ExperimentStarter {
         createDirs();
         init();
         // Start subprocesses to run simulations
-        List<Process> processList = startSimProcesses();
-        // Wait for all subprocesses to complete
-        for (Process process : processList) {
-            process.waitFor();
-        }
+        startSimProcesses();
         // Collect and save results
         List<Result> results = collectResults();
         ExperimentUtil.printExperimentResult(results, name);
@@ -92,23 +88,51 @@ public abstract class ExperimentStarter {
         paramFileList.add(file);
     }
 
-    private List<Process> startSimProcesses() throws Exception {
-        List<Process> processList = new ArrayList<>();
+    private void startSimProcesses() throws Exception {
+        // Automatically get the current JDK installation path
+        String javaPath = System.getProperty("java.home") + "/bin/java";
+        List<Process> runningProcesses = new ArrayList<>();
+        // Dynamically calculate the maximum number of concurrent processes
+        int availableCores = Runtime.getRuntime().availableProcessors();
+        int maxConcurrent = Math.max(1, availableCores - 4); // Keep 4 cores for system
+
+        log.info("🖥️  Detected CPU cores: {}, setting max concurrent processes: {}", availableCores, maxConcurrent);
+
         for (File paramFile : paramFileList) {
+            // Wait if current running processes reach the limit
+            while (runningProcesses.size() >= maxConcurrent) {
+                for (int i = 0; i < runningProcesses.size(); i++) {
+                    Process p = runningProcesses.get(i);
+                    if (!p.isAlive()) {
+                        runningProcesses.remove(i);
+                        i--;
+                    }
+                }
+                Thread.sleep(500); // Sleep briefly to avoid busy waiting
+            }
+
+            // Start a new simulation process
             ProcessBuilder pb = new ProcessBuilder(
-                    "java",
+                    javaPath,
+                    "-Xms256m", // Set minimum heap size
+                    "-Xmx512m", // Set maximum heap size
                     "-Dstartup.class=" + name,
                     "-cp", System.getProperty("java.class.path"),
                     SimStarter.class.getName(),
                     String.valueOf(level.levelInt),
                     paramFile.getAbsolutePath()
             );
-            pb.inheritIO(); // Inherit output for real-time logging
+            pb.inheritIO(); // Inherit IO to show real-time logs
             Process process = pb.start();
-            processList.add(process);
+            runningProcesses.add(process);
         }
-        return processList;
+        // Wait for all remaining processes to complete
+        for (Process process : runningProcesses) {
+            process.waitFor();
+        }
+
     }
+
 
     private List<Result> collectResults() {
         List<Result> resultList = new ArrayList<>();
