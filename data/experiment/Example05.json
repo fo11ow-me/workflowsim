@@ -8,25 +8,16 @@
         "jobSequenceStrategy": "UPWARD_RANK",
         "neighborhoodFactor": 0.6,
         "slackTimeFactor": 0.8,
-        "workflowList": [
+        "daxList": [
             "CyberShake_25",
             "CyberShake_50",
-            "CyberShake_100",
-            "CyberShake_200",
-            "CyberShake_400",
-            "CyberShake_500",
-            "Montage_25",
-            "Montage_50",
-            "Montage_100",
-            "Montage_200",
-            "Montage_400",
-            "Montage_500"
+            "CyberShake_100"
         ],
-        "elecCost": 2638.219535833334,
-        "finishTime": 42407.59,
+        "elecCost": 694.80899125,
+        "finishTime": 40358.33,
         "retryCount": 1,
-        "overdueCount": 4,
-        "plnRuntime": 262.143,
+        "overdueCount": 0,
+        "plnRuntime": 3.778,
         "runtime": 0
     },
     {
@@ -38,25 +29,16 @@
         "jobSequenceStrategy": "UPWARD_RANK",
         "neighborhoodFactor": 0.6,
         "slackTimeFactor": 0.8,
-        "workflowList": [
+        "daxList": [
             "CyberShake_25",
             "CyberShake_50",
-            "CyberShake_100",
-            "CyberShake_200",
-            "CyberShake_400",
-            "CyberShake_500",
-            "Montage_25",
-            "Montage_50",
-            "Montage_100",
-            "Montage_200",
-            "Montage_400",
-            "Montage_500"
+            "CyberShake_100"
         ],
-        "elecCost": 2656.6024426388885,
-        "finishTime": 43574.64,
-        "retryCount": 2,
-        "overdueCount": 6,
-        "plnRuntime": 260.334,
+        "elecCost": 720.9612120833334,
+        "finishTime": 40717.28,
+        "retryCount": 0,
+        "overdueCount": 0,
+        "plnRuntime": 3.923,
         "runtime": 0
     },
     {
@@ -68,25 +50,16 @@
         "jobSequenceStrategy": "UPWARD_RANK",
         "neighborhoodFactor": 0.6,
         "slackTimeFactor": 0.8,
-        "workflowList": [
+        "daxList": [
             "CyberShake_25",
             "CyberShake_50",
-            "CyberShake_100",
-            "CyberShake_200",
-            "CyberShake_400",
-            "CyberShake_500",
-            "Montage_25",
-            "Montage_50",
-            "Montage_100",
-            "Montage_200",
-            "Montage_400",
-            "Montage_500"
+            "CyberShake_100"
         ],
-        "elecCost": 1539.8612144444457,
-        "finishTime": 21231.61,
+        "elecCost": 468.19524472222236,
+        "finishTime": 20723.15,
         "retryCount": 0,
-        "overdueCount": 2,
-        "plnRuntime": 265.292,
+        "overdueCount": 0,
+        "plnRuntime": 3.743,
         "runtime": 0
     }
 ]
