@@ -181,49 +181,42 @@
             <scope>system</scope>
             <systemPath>${project.basedir}/lib/pegasus.jar</systemPath>
         </dependency>
-
-        <!--
-  If this dependency does not exist in your local Maven repository,
-  you can safely comment it out. This will not affect the project functionality.
--->
-        <dependency>
-            <groupId>org.griphyn</groupId>
-            <artifactId>pegasus</artifactId>
-            <version>3.0</version>
-        </dependency>
-
-
     </dependencies>
 
     <build>
         <plugins>
-            <!-- Maven Assembly Plugin: build a fat jar with dependencies -->
-            <!-- No fixed mainClass defined in manifest, so main class can be specified at runtime -->
+            <!-- Maven Shade Plugin: Used for packaging the project into a Fat JAR -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-assembly-plugin</artifactId>
-                <version>3.6.0</version>
-                <configuration>
-                    <descriptorRefs>
-                        <descriptorRef>jar-with-dependencies</descriptorRef>
-                    </descriptorRefs>
-                    <archive>
-                        <manifest>
-                            <!-- No mainClass specified here -->
-                        </manifest>
-                    </archive>
-                </configuration>
+                <artifactId>maven-shade-plugin</artifactId>
+                <version>3.6.0</version> <!-- Use the latest plugin version -->
                 <executions>
                     <execution>
-                        <id>make-assembly</id>
-                        <phase>package</phase>
+                        <phase>package</phase> <!-- Execute during the 'package' phase -->
                         <goals>
-                            <goal>single</goal>
+                            <goal>shade</goal> <!-- The goal that creates the Fat JAR -->
                         </goals>
+                        <configuration>
+                            <artifactSet>
+                                <!-- Exclude unnecessary dependencies from the Fat JAR -->
+                                <excludes>
+                                    <exclude>org.apache.commons:commons-logging</exclude> <!-- Example exclusion -->
+                                    <!-- Add more exclusions if necessary -->
+                                </excludes>
+                            </artifactSet>
+                            <transformers>
+                                <!-- Add a transformer to include the Main-Class in the manifest file -->
+                                <transformer
+                                        implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
+                                    <mainClass>com.qiujie.demo.Demo01</mainClass> <!-- Specify the main class to run -->
+                                </transformer>
+                            </transformers>
+                        </configuration>
                     </execution>
                 </executions>
             </plugin>
         </plugins>
     </build>
+
 
 </project>
