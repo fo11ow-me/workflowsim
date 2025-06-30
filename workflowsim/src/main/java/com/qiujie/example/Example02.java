@@ -33,20 +33,20 @@ public class Example02 {
         org.cloudbus.cloudsim.Log.disable();
         CloudSim.init(USERS, Calendar.getInstance(), TRACE_FLAG);
         Log.setLevel(Level.INFO);
-        List<String> daxPathList = List.of(
-//                "data/dax/Inspiral_1000.xml",
-//                "data/dax/Inspiral_100.xml",
-//                "data/dax/Inspiral_50.xml",
-//                "data/dax/Epigenomics_997.xml",
-                "data/dax/Sipht_30.xml",
-//                "data/dax/Montage_1000.xml",
-//                "data/dax/CyberShake_100.xml",
-//                "data/dax/CyberShake_30.xml",
-//                "data/dax/Epigenomics_46.xml",
-//                "data/dax/Epigenomics_24.xml",
-                "data/dax/Montage_100.xml",
-//                "data/dax/Montage_1000.xml",
-                "data/dax/Montage_50.xml"
+        List<String> daxList = List.of(
+                "Inspiral_1000",
+                "Inspiral_100",
+                "Inspiral_50",
+//                "Epigenomics_997",
+                "Sipht_30",
+//                "Montage_1000",
+//                "CyberShake_100",
+//                "CyberShake_30",
+//                "Epigenomics_46",
+                "Epigenomics_24",
+                "Montage_100",
+//                "Montage_1000",
+                "Montage_50"
         );
         // create datacenters
         ExperimentUtil.createDatacenters();
@@ -56,7 +56,7 @@ public class Example02 {
         List<Vm> vmList = ExperimentUtil.createVms(random,broker.getId());
         broker.submitGuestList(vmList);
         // submit workflows
-        List<Workflow> workflowList = daxPathList.stream().map(WorkflowParser::parse).toList();
+        List<Workflow> workflowList = daxList.stream().map(WorkflowParser::parse).toList();
         broker.submitWorkflowList(workflowList);
         // start simulation
         CloudSim.startSimulation();

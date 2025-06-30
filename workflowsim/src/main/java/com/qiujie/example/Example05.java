@@ -30,24 +30,23 @@ public class Example05 extends ExperimentStarter {
 
     @Override
     protected void init() {
-        Log.setLevel(Level.DEBUG);
-        List<String> daxPathList = List.of(
-                "data/dax/CyberShake_25.xml"
-                , "data/dax/CyberShake_50.xml"
-                , "data/dax/CyberShake_100.xml"
-                , "data/dax/CyberShake_200.xml"
-                , "data/dax/CyberShake_400.xml"
-                , "data/dax/CyberShake_500.xml"
-                , "data/dax/Montage_25.xml"
-                , "data/dax/Montage_50.xml"
-                , "data/dax/Montage_100.xml"
-                , "data/dax/Montage_200.xml"
-                , "data/dax/Montage_400.xml"
-                , "data/dax/Montage_500.xml"
+        List<String> daxList = List.of(
+                "CyberShake_25"
+                , "CyberShake_50"
+                , "CyberShake_100"
+//                , "CyberShake_200"
+//                , "CyberShake_400"
+//                , "CyberShake_500"
+//                , "Montage_25"
+//                , "Montage_50"
+//                , "Montage_100"
+//                , "Montage_200"
+//                , "Montage_400"
+//                , "Montage_500"
         );
 
-        addParam(new SimParameter(name, seed, daxPathList, RandomPlanner.class, new Parameter().setWorkflowComparator(DefaultComparator.class).setAscending(true)));
-        addParam(new SimParameter(name, seed, daxPathList, RandomPlanner.class, new Parameter().setWorkflowComparator(LengthComparator.class).setAscending(false)));
-        addParam(new SimParameter(name, seed, daxPathList, HEFTPlanner.class, new Parameter().setWorkflowComparator(DefaultComparator.class).setAscending(true)));
+        addParam(new SimParameter(name, seed, daxList, RandomPlanner.class, new Parameter().setWorkflowComparator(DefaultComparator.class).setAscending(true)));
+        addParam(new SimParameter(name, seed, daxList, RandomPlanner.class, new Parameter().setWorkflowComparator(LengthComparator.class).setAscending(false)));
+        addParam(new SimParameter(name, seed, daxList, HEFTPlanner.class, new Parameter().setWorkflowComparator(DefaultComparator.class).setAscending(true)));
     }
 }

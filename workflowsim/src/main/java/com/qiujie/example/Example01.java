@@ -34,20 +34,8 @@ public class Example01 {
         org.cloudbus.cloudsim.Log.disable();
         CloudSim.init(USERS, Calendar.getInstance(), TRACE_FLAG);
         Log.setLevel(Level.TRACE);
-//            String daxPath = "data/dax/Inspiral_1000.xml";
-//            String daxPath = "data/dax/Inspiral_100.xml";
-//            String daxPath = "data/dax/Epigenomics_997.xml";
-        String daxPath = "data/dax/Montage_25.xml";
-//            String daxPath = "data/dax/CyberShake_25.xml";
-//            String daxPath = "data/dax/Epigenomics_46.xml";
-//            String daxPath = "data/dax/Montage_50.xml";
-//        String daxPath = "data/dax/Montage_1000.xml";
-//        String daxPath = "data/dax/Montage_50.xml";
-//            String daxPath = "data/dax/Montage_25.xml";
-//            String daxPath = "data/dax/Sipht_1000.xml";
+        String dax = "Montage_50";
         // basic parameters
-
-
         ContinuousDistribution random = new UniformDistr(0, 1, send);
         LENGTH_FACTOR = 1e5;
 
@@ -59,7 +47,7 @@ public class Example01 {
         List<Vm> vmList = ExperimentUtil.createVms(random, broker.getId());
         broker.submitGuestList(vmList);
         // submit workflows
-        Workflow workflow = WorkflowParser.parse(daxPath);
+        Workflow workflow = WorkflowParser.parse(dax);
         broker.submitWorkflow(workflow);
         // start simulation
         CloudSim.startSimulation();
