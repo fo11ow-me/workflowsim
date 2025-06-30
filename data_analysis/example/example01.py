@@ -1,5 +1,5 @@
 import unittest
-from src.anova import run
+from src.util import run_anova
 
 
 class Main(unittest.TestCase):
@@ -9,7 +9,7 @@ class Main(unittest.TestCase):
 
     def test_two_way_anova(self):
         """Test two-way ANOVA with jobSequenceStrategy and neighborhoodFactor"""
-        run(
+        run_anova(
             json_path=self.base_path + "Example06.json",
             target_variable="elecCost",
             group_variables=["workflowComparator", "ascending"],
