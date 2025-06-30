@@ -11,7 +11,6 @@ import lombok.AccessLevel;
 import lombok.Setter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.slf4j.Marker;
 import org.slf4j.MarkerFactory;
 
 import java.io.File;
@@ -31,45 +30,47 @@ public abstract class ExperimentStarter {
     @Setter(AccessLevel.PROTECTED)
     private Level level;
     private final List<SimParameter> paramList;
-    private final Marker EXPERIMENT;
 
     public ExperimentStarter() {
-        // Initialize experiment with the name of the class
+        // Initialize the experiment name with the simple class name
         this.name = getClass().getSimpleName();
         System.setProperty("startup.class", name);
         this.log = LoggerFactory.getLogger(ExperimentStarter.class);
         this.level = LEVEL;
         this.paramList = new ArrayList<>();
-        this.EXPERIMENT = MarkerFactory.getMarker(LevelEnum.EXPERIMENT.name());
+        // Create a marker for experiment-specific logging
+        SYSTEM = MarkerFactory.getMarker(LevelEnum.SYSTEM.name());
         start();
     }
 
     private void start() {
-        log.info(EXPERIMENT, "{}: Starting...", name);
+        log.info(SYSTEM, "{}: Starting...", name);
         this.seed = System.currentTimeMillis();
-        try {
-            run();
-            log.info(EXPERIMENT, String.format("%s: Finished in %.2fs", name, (System.currentTimeMillis() - seed) / 1000.0));
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+        run();
+        long end = System.currentTimeMillis();
+        double runtime = (end - seed) / 1000.0;
+        log.info(SYSTEM, "{}: Finished in {}s", name, runtime);
     }
 
-    private void run() throws Exception {
+    private void run() {
+        // Create necessary directories for saving parameters, results, simulation data, and experiment data
         createDirs();
+        // Initialize experiment-specific parameters
         init();
-        // Start subprocesses to run simulations
+        // Start subprocesses to run simulations concurrently
         startSimProcesses();
-        // Collect and save results
+        // Collect results from simulation output files
         List<Result> results = collectResults();
+        // Print the experiment results summary
         ExperimentUtil.printExperimentResult(results, name);
+        // Generate experiment data files
         ExperimentUtil.generateExperimentData(results, name);
-        // Delete temporary parameter files
+        // Delete the temporary parameter file used by simulations
         new File(PARAM_DIR + name + ".json").delete();
     }
 
     private void createDirs() {
-        // Create directories for saving parameter, result, simulation data, and experiment data
+        // Create directories if they don't exist
         FileUtil.mkdir(PARAM_DIR);
         FileUtil.mkdir(RESULT_DIR);
         FileUtil.mkdir(SIM_DATA_DIR);
@@ -79,106 +80,120 @@ public abstract class ExperimentStarter {
     protected abstract void init();
 
     protected void addParam(SimParameter simParameter) {
-        // Add a parameter with a unique ID based on the paramList size
+        // Assign a unique ID to the parameter based on the current parameter list size
         String id = String.format(name + "_%06d", paramList.size());
         simParameter.setId(id);
         paramList.add(simParameter);
     }
 
-    private void startSimProcesses() throws Exception {
-        int reservedCores = 8;
-        int progressStep = 10;
-        String javaPath = System.getProperty("java.home") + "/bin/java";
+    private void startSimProcesses() {
+        int reservedCores = 8;  // Number of CPU cores to reserve for system tasks
+        int progressStep = 10;  // Log progress every 10 completed simulations
+        String javaPath = System.getProperty("java.home") + "/bin/java";  // Path to Java executable
         int availableCores = Runtime.getRuntime().availableProcessors();
-        int maxConcurrent = Math.max(1, availableCores - reservedCores);
-        log.info(EXPERIMENT, "🖥️ Detected CPU cores: {}, setting max concurrent processes: {}", availableCores, maxConcurrent);
+        int maxConcurrent = Math.max(1, availableCores - reservedCores);  // Maximum number of concurrent processes
+        log.info(SYSTEM, "🖥️ Detected CPU cores: {}, setting max concurrent processes: {}", availableCores, maxConcurrent);
 
+        // Write the simulation parameters to a JSON file for subprocess consumption
         String paramFilePath = PARAM_DIR + name + ".json";
         FileUtil.writeUtf8String(JSONUtil.toJsonPrettyStr(paramList), paramFilePath);
+
         int totalSims = paramList.size();
-        AtomicInteger finishedSims = new AtomicInteger();
+        AtomicInteger finishedSims = new AtomicInteger();  // Counter for finished simulations
+
+        // Create a fixed thread pool to control the max number of concurrent tasks
         ExecutorService executor = Executors.newFixedThreadPool(maxConcurrent);
         List<Future<?>> futures = new ArrayList<>();
 
-        // Start first sim progress log
-        log.info(EXPERIMENT, "✅ Progress: 0 / {}", totalSims);
+        log.info(SYSTEM, "Progress: 0 / {} ✅ ", totalSims);
 
         for (int index = 0; index < totalSims; index++) {
             final int simIndex = index;
             futures.add(executor.submit(() -> {
                 try {
+                    // Build the process command to launch the simulation subprocess
                     ProcessBuilder pb = new ProcessBuilder(
                             javaPath,
-                            "-Xms512m",
-                            "-Xmx1g",
+                            "-Xms512m",  // Initial heap memory
+                            "-Xmx1g",  // Maximum heap memory
                             "-XX:+EnableDynamicAgentLoading",
-                            "-Dstartup.class=" + name,
-                            "-cp", System.getProperty("java.class.path"),
-                            SimStarter.class.getName(),
-                            String.valueOf(level.levelInt),
-                            paramFilePath,
-                            String.valueOf(simIndex)
+                            "-Dstartup.class=" + name,  // Pass the startup class name as a system property
+                            "-cp", System.getProperty("java.class.path"),  // Set classpath
+                            SimStarter.class.getName(),  // Main class to start
+                            String.valueOf(level.levelInt),  // Logging level
+                            paramFilePath,  // Path to parameter JSON file
+                            String.valueOf(simIndex)  // Simulation index
                     );
-                    pb.inheritIO();
+                    pb.inheritIO();  // Inherit I/O so that subprocess logs print directly to the console
                     Process process = pb.start();
-                    if (process.waitFor() != 0) {
-                        log.error(EXPERIMENT, "❌ Sim {} failed", simIndex);
-                    }
-
+                    process.waitFor();  // Wait for the process to finish
+                } catch (Exception e) {
+                    log.error("Error executing sim {}", simIndex, e);
+                } finally {
+                    // Increment the finished simulations counter and log progress periodically
                     synchronized (this) {
-                        finishedSims.getAndIncrement();
-                        if (finishedSims.get() % progressStep == 0) {
-                            log.info(EXPERIMENT, "✅ Progress: {} / {}", finishedSims, totalSims);
+                        int done = finishedSims.incrementAndGet();
+                        if (done % progressStep == 0 || done == totalSims) {
+                            log.info(SYSTEM, "Progress: {} / {} ✅ ", done, totalSims);
                         }
                     }
-                } catch (Exception e) {
-                    log.error(EXPERIMENT, "Error executing sim {}: {}", simIndex, e.getMessage());
                 }
             }));
         }
 
-        // Wait for all processes to finish
+        // Wait for all submitted simulation tasks to finish
         for (Future<?> future : futures) {
-            future.get();  // Wait for the completion of each sim
+            try {
+                future.get();  // Wait for the completion of each sim
+            } catch (Exception e) {
+                log.error("Error waiting for sim task completion", e);
+            }
         }
-
-        // Final progress log after all tasks finish
-        if (finishedSims.get() % progressStep != 0) {
-            log.info(EXPERIMENT, "✅ Final Progress: {} / {}", finishedSims, totalSims);
-        }
-
-        executor.shutdown();  // Gracefully shutdown the executor
+        executor.shutdown();  // Gracefully shut down the thread pool
     }
 
 
-    // Collect results and delete corresponding result files
+    /**
+     * Collect simulation results and delete corresponding result files
+     *
+     * @return
+     */
     private List<Result> collectResults() {
         List<Result> resultList = new ArrayList<>();
-        File[] resultFileList = new File(RESULT_DIR).listFiles(
-                (dir, fileName) -> fileName.startsWith(name) && fileName.endsWith(".json")
-        );
+        for (SimParameter simParameter : paramList) {
+            // Construct result file path based on simParameter's id
+            File file = new File(RESULT_DIR + name + "_" + simParameter.getId() + ".json");
 
-        if (resultFileList == null || resultFileList.length == 0) {
-            log.error(EXPERIMENT, "❌ No result files found!");
-            return resultList;
-        }
+            // Check if the file exists
+            if (!file.exists()) {
+                log.warn("Result file {} does not exist! ❌ ", file.getName());
+                continue;
+            }
 
-        // Process each result file
-        for (File file : resultFileList) {
             try {
-                // Read and parse the result file
+                // Read and parse the JSON result file into a Result object
                 String json = FileUtil.readUtf8String(file);
                 Result result = JSONUtil.toBean(json, Result.class);
                 resultList.add(result);
+                log.info("Successfully collected result file: {}", file.getName()); // Success log
+            } catch (Exception e) {
+                // Log error and skip this file, do not throw to avoid breaking overall result collection
+                log.error("Failed to read result file {} ❌ ", file.getName(), e);
+                continue;
+            }
 
-                // After reading the result, delete the corresponding result file
+            try {
+                // Try to delete the result file after processing, log warning if fails
                 if (file.exists() && !file.delete()) {
-                    log.warn(EXPERIMENT, "⚠️ Failed to delete result file: {}", file.getName());
+                    log.warn("Failed to delete result file: {} ⚠️ ", file.getName());
+                } else {
+                    log.info("Successfully deleted result file: {} ✅", file.getName()); // Success log for deletion
                 }
             } catch (Exception e) {
-                log.warn(EXPERIMENT, "⚠️ Failed to read result file: {}", file.getName(), e);
+                log.warn("Exception when deleting result file {} ⚠️ ", file.getName(), e);
             }
         }
         return resultList;
     }
+
 }

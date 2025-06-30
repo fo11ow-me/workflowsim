@@ -76,9 +76,9 @@ public abstract class WorkflowPlannerAbstract {
             run();
             long end = System.currentTimeMillis();
             this.runtime = (end - start) / 1000.0;
-            log.info("{}: {}: Running {}s", CloudSim.clock(), this, this.runtime);
+            log.info("{}: {}: Finished in {}s", CloudSim.clock(), this, this.runtime);
         } catch (Exception e) {
-            e.printStackTrace();
+            log.error("{}: {}: Planning failed ❌ ", CloudSim.clock(), this, e);
         }
     }
 
@@ -261,8 +261,6 @@ public abstract class WorkflowPlannerAbstract {
 //        }
 //        workflow.setReliGoal(Math.pow(getParameter().getReliabilityFactor(), workflow.getJobNum()) * maxReliability);
 //    }
-
-
     protected void calculateExecutionTimeAndReliability(Workflow workflow) {
         // Get unique types of VMs, retaining only one instance for each type
         List<Vm> vmList = getVmList().stream()
@@ -326,8 +324,6 @@ public abstract class WorkflowPlannerAbstract {
         // Multiply by the smoothed reliability to balance precision and stability
         workflow.setReliGoal(Math.pow(getParameter().getReliabilityFactor(), jobNum) * smoothReliability);
     }
-
-
 
 
     protected List<Job> constructInitialJobSequence(Workflow workflow) {

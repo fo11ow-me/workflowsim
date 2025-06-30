@@ -67,9 +67,6 @@ public final class Log {
      * @param level the logging level to set
      */
     public static void setLevel(final Level level) {
-        if (level == Level.OFF) {
-            Constants.ENABLE_SIM_LOG = false;
-        }
         final var root = LoggerFactory.getLogger(Logger.ROOT_LOGGER_NAME);
         setLevel(root, level);
     }

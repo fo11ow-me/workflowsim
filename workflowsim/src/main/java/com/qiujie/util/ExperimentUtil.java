@@ -43,8 +43,7 @@ import static com.qiujie.Constants.*;
 @Slf4j
 public class ExperimentUtil {
 
-    private static final Marker EXPERIMENT = MarkerFactory.getMarker(LevelEnum.EXPERIMENT.name());
-    private static final Marker SIM = MarkerFactory.getMarker(LevelEnum.SIM.name());
+    private static final Marker EXPERIMENT = MarkerFactory.getMarker(LevelEnum.SYSTEM.name());
 
     private static List<HostConfig> readHostConfig() {
         // Get the InputStream for the resource file
@@ -104,7 +103,6 @@ public class ExperimentUtil {
         list.forEach(vmConfig -> vmConfig.getFvConfigList().sort(Comparator.comparingDouble(FvConfig::getFrequency).reversed()));
         return list;
     }
-
 
 
     public static List<Datacenter> createDatacenters() {
@@ -204,7 +202,7 @@ public class ExperimentUtil {
         Table table = builder.build();
         List<Integer> dcIds = list.stream().map(Cloudlet::getResourceId).distinct().toList();
         List<Integer> vmIds = list.stream().map(Cloudlet::getGuestId).distinct().toList();
-        log.info(SIM, "\n                                                                               {} Simulation Result\nUse {} Dcs {}\nUse {} Vms {}\n{}\n", title, dcIds.size(), dcIds, vmIds.size(), vmIds, table);
+        log.info("\n                                                                               {} Simulation Result\nUse {} Dcs {}\nUse {} Vms {}\n{}\n", title, dcIds.size(), dcIds, vmIds.size(), vmIds, table);
     }
 
     public static void printExperimentResult(List<Result> list) {
@@ -225,9 +223,8 @@ public class ExperimentUtil {
                 .addColumn("Overdue_Count", list.stream().map(result -> String.format("%d (%d)", result.getOverdueCount(), sortByOverdueCount.indexOf(result))).toArray(String[]::new), ColumnFormatter.text(Alignment.CENTER, 15))
                 .addColumn("Runtime", list.stream().map(result -> String.format("%.2f (%d)", result.getPlnRuntime(), sortByRuntime.indexOf(result))).toArray(String[]::new), ColumnFormatter.text(Alignment.CENTER, 15));
         Table table = builder.build();
-        log.info(EXPERIMENT, "\n                                                                               {} Experiment Result\n{}\n", title, table);
+        log.info(SYSTEM, "\n                                                                               {} Experiment Result\n{}\n", title, table);
     }
-
 
 
     /**
@@ -358,8 +355,6 @@ public class ExperimentUtil {
 
         return prefix.toString();
     }
-
-
 
 
 }
