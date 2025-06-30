@@ -36,7 +36,7 @@ public class SimStarter {
     private Result result;
     private double runtime;
 
-    private final Marker STARTUP_SIM = MarkerFactory.getMarker(LevelEnum.STARTUP_SIM.name());
+    private final Marker SIM = MarkerFactory.getMarker(LevelEnum.SIM.name());
 
 
     public SimStarter(SimParameter simParameter) throws Exception {
@@ -50,13 +50,13 @@ public class SimStarter {
     }
 
     public void start() {
-        log.info(STARTUP_SIM, "{}: Starting...", planner);
+        log.info(SIM, "{}: Starting...", planner);
         long start = System.currentTimeMillis();
         try {
             run();
             long end = System.currentTimeMillis();
             this.runtime = (end - start) / 1000.0;
-            log.info(STARTUP_SIM, String.format("%s: Running %.2fs", planner, runtime));
+            log.info(SIM, String.format("%s: Running %.2fs", planner, runtime));
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -75,7 +75,7 @@ public class SimStarter {
         List<Vm> vmList = ExperimentUtil.createVms(random, broker.getId());
         broker.submitGuestList(vmList);
         // submit workflows
-        List<Workflow> workflowList = simParameter.getDaxPathList().stream().map(WorkflowParser::parse).toList();
+        List<Workflow> workflowList = simParameter.getDaxList().stream().map(WorkflowParser::parse).toList();
         broker.submitWorkflowList(workflowList);
         // start simulation
         CloudSim.startSimulation();
@@ -95,7 +95,7 @@ public class SimStarter {
                 simParameter.getParameter().getJobSequenceStrategy().name(),
                 simParameter.getParameter().getNeighborhoodFactor(),
                 simParameter.getParameter().getSlackTimeFactor(),
-                simParameter.getDaxPathList().stream().map(FileUtil::mainName).toList(),
+                new ArrayList<>(simParameter.getDaxList()),
                 broker.getCloudletReceivedList().stream().mapToDouble(cloudlet -> ((Job) cloudlet).getElecCost()).sum(),
                 broker.getCloudletReceivedList().getLast().getExecFinishTime(),
                 broker.getCloudletReceivedList().stream().mapToInt(cloudlet -> ((Job) cloudlet).getRetryCount()).sum(),
@@ -110,11 +110,15 @@ public class SimStarter {
         try {
             int logLevel = Integer.parseInt(args[0]);
             Log.setLevel(Level.toLevel(logLevel));
+
             String paramPath = args[1];
-            // Read file content as string
+            int paramIndex = Integer.parseInt(args[2]);
             String json = FileUtil.readUtf8String(paramPath);
-            // Convert JSON string to SimParameter object
-            SimParameter simParameter = JSONUtil.toBean(json, SimParameter.class);
+            List<SimParameter> paramList = JSONUtil.toList(json, SimParameter.class);
+            if (paramIndex < 0 || paramIndex >= paramList.size()) {
+                throw new IllegalArgumentException("❌ Invalid parameter index: " + paramIndex);
+            }
+            SimParameter simParameter = paramList.get(paramIndex);
             SimStarter starter = new SimStarter(simParameter);
             String path = RESULT_DIR + simParameter.getId() + ".json";
             FileUtil.writeUtf8String(JSONUtil.toJsonPrettyStr(starter.getResult()), path);
@@ -127,6 +131,3 @@ public class SimStarter {
 
 
 }
-
-
-

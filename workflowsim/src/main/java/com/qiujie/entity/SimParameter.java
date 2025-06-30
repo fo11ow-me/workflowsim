@@ -12,20 +12,20 @@ public class SimParameter {
     private String id;
     private String experimentName;
     private long seed;
-    private List<String> daxPathList;
+    private List<String> daxList;
     private String plannerClass;
     private Parameter parameter;
 
-    public SimParameter(String experimentName, long seed, List<String> daxPathList, Class<? extends WorkflowPlannerAbstract> plannerClass, Parameter parameter) {
+    public SimParameter(String experimentName, long seed, List<String> daxList, Class<? extends WorkflowPlannerAbstract> plannerClass, Parameter parameter) {
         this.experimentName = experimentName;
         this.seed = seed;
-        this.daxPathList = daxPathList;
+        this.daxList = daxList;
         this.plannerClass = plannerClass.getName();
         this.parameter = parameter;
     }
 
-    public SimParameter(String experimentName, long seed, List<String> daxPathList, Class<? extends WorkflowPlannerAbstract> plannerClass) {
-        this(experimentName, seed, daxPathList, plannerClass, new Parameter());
+    public SimParameter(String experimentName, long seed, List<String> daxList, Class<? extends WorkflowPlannerAbstract> plannerClass) {
+        this(experimentName, seed, daxList, plannerClass, new Parameter());
     }
 
 

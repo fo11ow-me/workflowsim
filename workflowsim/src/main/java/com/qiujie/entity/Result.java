@@ -16,7 +16,7 @@ public class Result {
     private String jobSequenceStrategy;
     private double neighborhoodFactor;
     private double slackTimeFactor;
-    private List<String> workflowList;
+    private List<String> daxList;
     private double elecCost;
     private double finishTime;
     private int retryCount;

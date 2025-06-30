@@ -3,9 +3,7 @@ package com.qiujie;
 import ch.qos.logback.classic.Level;
 import com.qiujie.comparator.*;
 import com.qiujie.enums.JobSequenceStrategyEnum;
-import generator.app.Application;
-import generator.app.CyberShake;
-import generator.app.Montage;
+import generator.app.*;
 
 import java.io.File;
 import java.util.List;
@@ -13,13 +11,14 @@ import java.util.List;
 public class Constants {
 
 
-    public static final String PARAM_DIR = System.getProperty("user.dir") + File.separator + "tmp" + File.separator + "params" + File.separator;
-    public static final String RESULT_DIR = System.getProperty("user.dir") + File.separator + "tmp" + File.separator + "results" + File.separator;
+    public static final String DAX_DIR = System.getProperty("user.dir") + File.separator + "data" + File.separator + "dax" + File.separator;
     public static final String SIM_DATA_DIR = System.getProperty("user.dir") + File.separator + "data" + File.separator + "sim" + File.separator;
     public static final String EXPERIMENT_DATA_DIR = System.getProperty("user.dir") + File.separator + "data" + File.separator + "experiment" + File.separator;
+    public static final String PARAM_DIR = System.getProperty("user.dir") + File.separator + "tmp" + File.separator + "param" + File.separator;
+    public static final String RESULT_DIR = System.getProperty("user.dir") + File.separator + "tmp" + File.separator + "result" + File.separator;
 
 
-    public static final Level LEVEL = Level.DEBUG;
+    public static final Level LEVEL = Level.OFF;
 
     public static final int USERS = 1;
     public static final boolean TRACE_FLAG = false;
@@ -77,17 +76,16 @@ public class Constants {
     public static double LENGTH_FACTOR = 1e3;
 
     // data
-    public static List<Class<? extends Application>> APP_LIST = List.of(Montage.class, CyberShake.class);
+    public static List<Class<? extends Application>> APP_LIST = List.of(Montage.class, CyberShake.class, Genome.class, LIGO.class, SIPHT.class);
     public static List<Integer> JOB_NUM_LIST = List.of(25, 50, 100, 200, 400);
-    public static List<Integer> INSTANCE_NUM_LIST = List.of(20, 40, 60, 80, 100);
+
     //  List of parameter ranges
-    public static final List<Class<? extends WorkflowComparatorInterface>> WORKFLOW_COMPARATOR_LIST = List.of(DefaultComparator.class, DepthComparator.class, JobNumComparator.class, LengthComparator.class);
-    public static final List<Boolean> ASCENDING_LIST = List.of(true, false);
     public static final List<Double> DEADLINE_FACTOR_LIST = List.of(0.2, 0.4, 0.6, 0.8);
-    public static final List<Double> RELIABILITY_FACTOR_LIST = List.of(0.992, 0.994, 0.996, 0.998);
+    public static final List<Double> RELIABILITY_FACTOR_LIST = List.of(0.92, 0.94, 0.96, 0.98);
     public static final List<JobSequenceStrategyEnum> JOB_SEQUENCE_STRATEGY_LIST = List.of(JobSequenceStrategyEnum.UPWARD_RANK, JobSequenceStrategyEnum.DOWNWARD_RANK, JobSequenceStrategyEnum.DEADLINE);
     public static final List<Double> NEIGHBORHOOD_FACTOR_LIST = List.of(0.2, 0.4, 0.6, 0.8);
     public static final List<Double> SLACK_TIME_FACTOR_LIST = List.of(0.2, 0.4, 0.6, 0.8);
+
     // // default parameter values
     public static Class<? extends WorkflowComparatorInterface> WORKFLOW_COMPARATOR = DefaultComparator.class;
     public static boolean ASCENDING = true;
@@ -101,10 +99,13 @@ public class Constants {
 
     public static int MAX_RETRY_COUNT = 10;
 
-    public static boolean ENABLE_STARTUP_SIM = true;
-    public static boolean ENABLE_RESULT_SIM = true;
+    public static boolean ENABLE_SIM_LOG = true;
     public static boolean ENABLE_SIM_DATA = false;
 
     public static int REPEAT_TIMES = 10;
+
+    public static List<Integer> INSTANCE_NUM_LIST = List.of(20, 40, 60, 80, 100);
+    public static final List<Class<? extends WorkflowComparatorInterface>> WORKFLOW_COMPARATOR_LIST = List.of(DefaultComparator.class, DepthComparator.class, JobNumComparator.class, LengthComparator.class);
+    public static final List<Boolean> ASCENDING_LIST = List.of(true, false);
 
 }

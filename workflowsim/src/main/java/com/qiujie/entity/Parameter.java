@@ -3,7 +3,6 @@ package com.qiujie.entity;
 import com.qiujie.comparator.WorkflowComparatorInterface;
 import com.qiujie.enums.JobSequenceStrategyEnum;
 import com.qiujie.util.ExperimentUtil;
-import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;

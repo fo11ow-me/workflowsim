@@ -2,6 +2,7 @@ package com.qiujie.util;
 
 import cn.hutool.core.date.DateUtil;
 import cn.hutool.core.io.FileUtil;
+import cn.hutool.core.io.IORuntimeException;
 import cn.hutool.core.util.CharsetUtil;
 import cn.hutool.json.*;
 import com.qiujie.config.FvConfig;
@@ -30,6 +31,8 @@ import org.slf4j.Marker;
 import org.slf4j.MarkerFactory;
 
 import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.*;
@@ -40,22 +43,69 @@ import static com.qiujie.Constants.*;
 @Slf4j
 public class ExperimentUtil {
 
-    private static final Marker RESULT_EXPERIMENT = MarkerFactory.getMarker(LevelEnum.RESULT_EXPERIMENT.name());
-    private static final Marker RESULT_SIM = MarkerFactory.getMarker(LevelEnum.RESULT_SIM.name());
+    private static final Marker EXPERIMENT = MarkerFactory.getMarker(LevelEnum.EXPERIMENT.name());
+    private static final Marker SIM = MarkerFactory.getMarker(LevelEnum.SIM.name());
 
     private static List<HostConfig> readHostConfig() {
-        String path = Objects.requireNonNull(ExperimentUtil.class.getClassLoader().getResource("config/host.json")).getPath();
-        JSONArray array = JSONUtil.readJSONArray(new File(path), CharsetUtil.CHARSET_UTF_8);
+        // Get the InputStream for the resource file
+        InputStream inputStream = ExperimentUtil.class.getClassLoader().getResourceAsStream("config/host.json");
+        if (inputStream == null) {
+            throw new IORuntimeException("Unable to find host.json file");
+        }
+        // Write the content of InputStream to a temporary file
+        File tempFile;
+        try {
+            tempFile = File.createTempFile("host_config", ".json");
+            FileUtil.writeFromStream(inputStream, tempFile);  // Write the InputStream to the temporary file
+        } catch (IOException e) {
+            throw new IORuntimeException("Unable to create temporary file", e);
+        } finally {
+            // Close the InputStream
+            try {
+                inputStream.close();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+
+        // Read JSON data from the temporary file using Hutool
+        JSONArray array = JSONUtil.readJSONArray(tempFile, CharsetUtil.CHARSET_UTF_8);
         return JSONUtil.toList(array, HostConfig.class);
     }
 
     private static List<VmConfig> readVmConfig() {
-        String path = Objects.requireNonNull(ExperimentUtil.class.getClassLoader().getResource("config/vm.json")).getPath();
-        JSONArray array = JSONUtil.readJSONArray(new File(path), CharsetUtil.CHARSET_UTF_8);
+        // Get the InputStream for the resource file
+        InputStream inputStream = ExperimentUtil.class.getClassLoader().getResourceAsStream("config/vm.json");
+        if (inputStream == null) {
+            throw new IORuntimeException("Unable to find vm.json file");
+        }
+
+        // Write the content of InputStream to a temporary file
+        File tempFile;
+        try {
+            tempFile = File.createTempFile("vm_config", ".json");
+            FileUtil.writeFromStream(inputStream, tempFile);  // Write the InputStream to the temporary file
+        } catch (IOException e) {
+            throw new IORuntimeException("Unable to create temporary file", e);
+        } finally {
+            // Close the InputStream
+            try {
+                inputStream.close();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+
+        // Read JSON data from the temporary file using Hutool
+        JSONArray array = JSONUtil.readJSONArray(tempFile, CharsetUtil.CHARSET_UTF_8);
         List<VmConfig> list = JSONUtil.toList(array, VmConfig.class);
+
+        // Sort the FV config list by frequency in descending order
         list.forEach(vmConfig -> vmConfig.getFvConfigList().sort(Comparator.comparingDouble(FvConfig::getFrequency).reversed()));
         return list;
     }
+
+
 
     public static List<Datacenter> createDatacenters() {
         List<Datacenter> list = new ArrayList<>(); // Pre-allocate capacity
@@ -154,7 +204,7 @@ public class ExperimentUtil {
         Table table = builder.build();
         List<Integer> dcIds = list.stream().map(Cloudlet::getResourceId).distinct().toList();
         List<Integer> vmIds = list.stream().map(Cloudlet::getGuestId).distinct().toList();
-        log.info(RESULT_SIM, "\n                                                                               {} Simulation Result\nUse {} Dcs {}\nUse {} Vms {}\n{}\n", title, dcIds.size(), dcIds, vmIds.size(), vmIds, table);
+        log.info(SIM, "\n                                                                               {} Simulation Result\nUse {} Dcs {}\nUse {} Vms {}\n{}\n", title, dcIds.size(), dcIds, vmIds.size(), vmIds, table);
     }
 
     public static void printExperimentResult(List<Result> list) {
@@ -175,7 +225,7 @@ public class ExperimentUtil {
                 .addColumn("Overdue_Count", list.stream().map(result -> String.format("%d (%d)", result.getOverdueCount(), sortByOverdueCount.indexOf(result))).toArray(String[]::new), ColumnFormatter.text(Alignment.CENTER, 15))
                 .addColumn("Runtime", list.stream().map(result -> String.format("%.2f (%d)", result.getPlnRuntime(), sortByRuntime.indexOf(result))).toArray(String[]::new), ColumnFormatter.text(Alignment.CENTER, 15));
         Table table = builder.build();
-        log.info(RESULT_EXPERIMENT, "\n                                                                               {} Experiment Result\n{}\n", title, table);
+        log.info(EXPERIMENT, "\n                                                                               {} Experiment Result\n{}\n", title, table);
     }
 
 

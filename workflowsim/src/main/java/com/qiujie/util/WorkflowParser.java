@@ -15,6 +15,8 @@ import java.io.IOException;
 import java.util.*;
 import java.util.stream.Collectors;
 
+import static com.qiujie.Constants.*;
+
 
 @Slf4j
 public class WorkflowParser {
@@ -23,20 +25,18 @@ public class WorkflowParser {
     /**
      * Parse the xml file and return workflow
      *
-     * @param path file path
+     * @param dax file dax
      * @return workflow
      */
-    public static Workflow parse(String path) {
-        SAXBuilder builder = new SAXBuilder();
+    public static Workflow parse(String dax) {
         // parse using builder to get DOM representation of the XML file
-        java.io.File daxFile = new java.io.File(path);
-        String workflowName = daxFile.getName().substring(0, daxFile.getName().lastIndexOf("."));
+        java.io.File daxFile = new java.io.File(DAX_DIR + dax + ".xml");
         if (!daxFile.exists()) {
-            throw new RuntimeException("Warning: path " + daxFile.getAbsolutePath() + " not exist");
+            throw new RuntimeException("Warning: dax " + daxFile.getAbsolutePath() + " not exist");
         }
         Document dom;
         try {
-            dom = builder.build(daxFile);
+            dom = new SAXBuilder().build(daxFile);
         } catch (JDOMException | IOException e) {
             throw new RuntimeException(e);
         }
@@ -56,7 +56,7 @@ public class WorkflowParser {
                     } else {
                         log.error("Cannot find runtime for " + id);
                     }
-                    Job job = new Job(workflowName + "_" + id, length);
+                    Job job = new Job(dax + "_" + id, length);
                     for (Element fileNode : node.getChildren()) {
                         if (fileNode.getName().equalsIgnoreCase("uses")) {
                             String fileName = fileNode.getAttributeValue("name"); // DAX version 3.3
@@ -113,7 +113,7 @@ public class WorkflowParser {
         setDepth(nodeMap);
         List<Job> jobList = new ArrayList<>(nodeMap.values());
         identifyLocalInputFile(jobList);
-        return new Workflow(workflowName, jobList);
+        return new Workflow(dax, jobList);
     }
 
 
