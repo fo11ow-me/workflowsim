@@ -53,7 +53,6 @@ def save_plot(dataframe, group_var, target_var, path):
     plt.close()
 
 
-
 def save_mean_ci_plot(df, group_var, target_var, path):
     sns.set(style='whitegrid', font='Times New Roman', font_scale=1.2)
     plt.figure(figsize=(8, 5))
@@ -83,9 +82,8 @@ def save_mean_ci_plot(df, group_var, target_var, path):
     plt.close()
 
 
-
-def run(json_path=None, data=None, target_variable="elecCost", group_variables=None, output_dir=None, use_rpd=True,
-        best_known=None):
+def run_anova(json_path=None, data=None, target_variable="elecCost", group_variables=None, output_dir=None, use_rpd=True,
+              best_known=None):
     if not group_variables or len(group_variables) == 0:
         raise ValueError("group_variables must contain at least one variable.")
 
@@ -172,7 +170,7 @@ def _run_one_way_anova(df, base_name, target_variable, group_var, output_dir):
     save_plot(df, group_var, target_variable, plot_path)
     print("📈 Boxplot saved to:", plot_path)
 
-    # 绘制 Mean + 95% CI 图
+    # plot Mean + 95% CI Chart
     mean_ci_path = os.path.join(output_dir, f"{base_name}_mean_ci_{group_var}.png")
     save_mean_ci_plot(df, group_var, target_variable, mean_ci_path)
     print(f"📊 Mean and 95% CI plot saved to: {mean_ci_path}")
@@ -254,8 +252,11 @@ def _run_multi_way_anova(df, base_name, target_variable, group_variables, output
         print(f"📈 Boxplot for {var} saved to:", boxplot_path)
         save_mean_ci_plot(df, var, target_variable, mean_ci_path)
         print(f"📊 Mean and 95% CI plot for {var} saved to:", mean_ci_path)
+
+
 def sanitize_filename(name):
     return re.sub(r'[\\/*?:"<>| ]', '_', str(name))
+
 
 def plot_rpd_comparison_chart(json_path, x_axis='deadlineFactor', save_path=None, chart_title=None, output_dir=None):
     import os
@@ -272,7 +273,7 @@ def plot_rpd_comparison_chart(json_path, x_axis='deadlineFactor', save_path=None
     # 2. Convert JSON data to DataFrame
     df = pd.DataFrame(raw_data)
 
-    # 处理 x_axis 为 list 的情况
+    # Handle case where x_axis is a list
     if df[x_axis].apply(lambda x: isinstance(x, list)).any():
         df[x_axis] = df[x_axis].apply(lambda x: '_'.join(str(i) for i in x))
 
@@ -280,37 +281,40 @@ def plot_rpd_comparison_chart(json_path, x_axis='deadlineFactor', save_path=None
     best_known = df['elecCost'].min()
     df['RPD'] = ((df['elecCost'] - best_known) / best_known) * 100
 
-    # 4. Clean 'name' field
+    # 4. Clean 'name' field by removing parentheses and extra spaces
     df['name'] = df['name'].apply(lambda x: re.sub(r'\(.*?\)', '', x).strip())
 
     # 5. Auto-generate chart title and save path
     base_name = os.path.splitext(os.path.basename(json_path))[0]
 
-    # 处理文件名中的非法字符
+    # Function to sanitize filename by removing illegal characters
     def sanitize_filename(name):
         return re.sub(r'[\\/*?:"<>| \[\],]', '_', str(name))
 
     x_axis_name = sanitize_filename(x_axis)
 
+    # If no title is provided, create a default title
     if not chart_title:
         chart_title = f'{base_name}: RPD vs {x_axis}'
 
+    # If no output directory is specified, use the current directory
     if not output_dir:
-        output_dir = '.'  # 默认当前目录
+        output_dir = '.'  # Default to current directory
 
+    # If no save path is provided, create a default save path
     if not save_path:
         save_file_name = f'{base_name}_{x_axis_name}_comparison_chart.png'
         save_path = os.path.join(output_dir, save_file_name)
 
-    # 6. Style settings (论文推荐风格)
+    # 6. Style settings (Recommended style for academic papers)
     sns.set(style='whitegrid', font='Times New Roman', font_scale=1.2)
     plt.figure(figsize=(10, 6))
-    palette = sns.color_palette('Set2')  # 柔和配色
+    palette = sns.color_palette('Set2')  # Soft color palette
     markers = ['o', 's', 'D', '^', 'v', 'P', '*', 'X']
 
     hue_count = df['name'].nunique()
 
-    # 7. Plotting with dodge only if multiple algorithms exist
+    # 7. Plotting with dodge only if there are multiple algorithms
     plot_params = dict(
         data=df,
         x=x_axis,
@@ -324,30 +328,32 @@ def plot_rpd_comparison_chart(json_path, x_axis='deadlineFactor', save_path=None
         linewidth=1.5
     )
 
+    # Only set dodge when there are more than one algorithm
     if hue_count > 1:
-        plot_params['dodge'] = 0.3  # Only set dodge when more than one algorithm
+        plot_params['dodge'] = 0.3
 
+    # Plot the pointplot with the given parameters
     ax = sns.pointplot(**plot_params)
 
-    # 设置标题、标签、字体
+    # Set title, labels, and font
     ax.set_title(chart_title, fontsize=16, fontweight='bold', pad=15)
     ax.set_xlabel(x_axis, fontsize=14)
     ax.set_ylabel('Relative Percentage Deviation (RPD) %', fontsize=14)
 
-    # 设置图例
+    # Set legend
     if hue_count > 1:
         ax.legend(title='Algorithm', bbox_to_anchor=(1.02, 1), loc='upper left', borderaxespad=0, frameon=False)
     else:
         ax.legend().remove()
 
-    # 设置刻度字号
+    # Set tick label font size
     plt.xticks(fontsize=12)
     plt.yticks(fontsize=12)
 
-    # 设置网格
+    # Set grid lines
     plt.grid(True, linestyle='--', linewidth=0.8, alpha=0.7)
 
-    # 设置坐标轴线宽
+    # Set axis line width
     ax.spines['top'].set_visible(False)
     ax.spines['right'].set_visible(False)
     ax.spines['left'].set_linewidth(1.2)
@@ -357,5 +363,3 @@ def plot_rpd_comparison_chart(json_path, x_axis='deadlineFactor', save_path=None
     plt.savefig(save_path, dpi=300, bbox_inches='tight')
     print(f"✅ Chart saved to: {save_path}")
     plt.close()
-
-
