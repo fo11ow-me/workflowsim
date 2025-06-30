@@ -264,67 +264,69 @@ public abstract class WorkflowPlannerAbstract {
 
 
     protected void calculateExecutionTimeAndReliability(Workflow workflow) {
-        // 获取不同类型的虚拟机，去除重复类型，只保留每种类型的一个实例
+        // Get unique types of VMs, retaining only one instance for each type
         List<Vm> vmList = getVmList().stream()
                 .collect(Collectors.toMap(
-                        vm -> ((DvfsVm) vm).getType(),  // 以虚拟机类型为key
-                        Function.identity(),             // 虚拟机对象为value
-                        (existing, replacement) -> existing // 有冲突时保留第一个
+                        vm -> ((DvfsVm) vm).getType(),  // Use VM type as the key
+                        Function.identity(),            // Use the VM instance as the value
+                        (existing, replacement) -> existing // Keep the first VM if duplicate types exist
                 ))
                 .values()
                 .stream()
                 .toList();
 
-        // 初始化存储每个任务对应不同频率的执行时间和可靠性映射表
+        // Initialize the mapping for each task's execution time and reliability under different frequencies
         execTimeMap = new HashMap<>();
         reliabilityMap = new HashMap<>();
 
-        double sumLogReliability = 0.0; // 用于累计所有任务可靠性的对数和（log乘积 = 和）
+        double sumLogReliability = 0.0; // Sum of the logarithms of each task's reliability
 
-        // 遍历工作流的所有任务
+        // Iterate over all tasks in the workflow
         for (Job job : workflow.getJobList()) {
             execTimeMap.put(job, new HashMap<>());
             reliabilityMap.put(job, new HashMap<>());
-            double maxSubReliability = 0; // 用于存储当前任务的最大可靠性
+            double maxSubReliability = 0; // Store the maximum reliability for the current task
 
-            // 遍历去重后的虚拟机列表
+            // Iterate over all unique VM types
             for (Vm vm : vmList) {
-                DvfsVm dvfsVm = (DvfsVm) vm; // 强制类型转换，方便获取频率列表
-                // 遍历该虚拟机支持的所有频率（频率-电压对）
+                DvfsVm dvfsVm = (DvfsVm) vm; // Cast to DvfsVm to access frequency list
+
+                // Iterate over all supported frequency-voltage pairs of the VM
                 for (Fv fv : dvfsVm.getFvList()) {
-                    // 计算任务在当前频率下的执行时间 = 任务长度 / 当前频率MIPS
+                    // Calculate the execution time at the current frequency: task length / MIPS
                     double executionTime = job.getLength() / fv.getMips();
-                    execTimeMap.get(job).put(fv, executionTime); // 记录执行时间
+                    execTimeMap.get(job).put(fv, executionTime); // Store execution time
 
-                    // 计算当前频率下任务的可靠性 (基于失效率lambda和执行时间的指数衰减模型)
+                    // Calculate reliability based on failure rate (lambda) and execution time using exponential decay model
                     double reliability = ExperimentUtil.calculateReliability(fv.getLambda(), executionTime);
-                    reliabilityMap.get(job).put(fv, reliability); // 记录可靠性
+                    reliabilityMap.get(job).put(fv, reliability); // Store reliability
 
-                    // 更新当前任务所有频率的最大可靠性值
+                    // Update the maximum reliability found for the current task
                     maxSubReliability = Math.max(maxSubReliability, reliability);
                 }
             }
 
-            // 防止 maxSubReliability 极端小导致 log(0) 或负无穷错误，做安全下限保护
+            // Protect against extreme small reliability values to avoid log(0) or negative infinity errors
             double safeReliability = Math.max(maxSubReliability, 1e-12);
 
-            // 累加所有任务最大可靠性的对数（乘积转为求和）
+            // Accumulate the logarithm of the maximum reliability for each task
             sumLogReliability += Math.log(safeReliability);
         }
 
-        int jobNum = workflow.getJobNum(); // 任务数量
+        int jobNum = workflow.getJobNum(); // Total number of tasks in the workflow
 
-        // 计算平均对数可靠性（即总对数和除以任务数，变成几何平均的对数）
+        // Calculate the average log reliability (geometric mean in log space)
         double avgLogReliability = sumLogReliability / jobNum;
 
-        // 将对数均值转换回原始可靠性值（几何平均可靠性）
+        // Convert the average log reliability back to the geometric mean reliability
         double smoothReliability = Math.exp(avgLogReliability);
 
-        // 设置可靠性目标：
-        // 用参数中的 ReliabilityFactor 的 jobNum 次方乘以平滑后的可靠性
-        // 保留了原有可靠性因子的权重，同时平滑了多个任务的乘积计算问题
+        // Set the workflow's reliability goal:
+        // Apply the reliability factor (raised to the power of task count) as a weight
+        // Multiply by the smoothed reliability to balance precision and stability
         workflow.setReliGoal(Math.pow(getParameter().getReliabilityFactor(), jobNum) * smoothReliability);
     }
+
 
 
 

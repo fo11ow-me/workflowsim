@@ -77,7 +77,7 @@ public class Constants {
 
     // data
     public static List<Class<? extends Application>> APP_LIST = List.of(Montage.class, CyberShake.class, Genome.class, LIGO.class, SIPHT.class);
-    public static List<Integer> JOB_NUM_LIST = List.of(25, 50, 100, 200, 400);
+    public static List<Integer> JOB_NUM_LIST = List.of(50, 100, 200, 400);
 
     //  List of parameter ranges
     public static final List<Double> DEADLINE_FACTOR_LIST = List.of(0.2, 0.4, 0.6, 0.8);
@@ -89,11 +89,12 @@ public class Constants {
     // // default parameter values
     public static Class<? extends WorkflowComparatorInterface> WORKFLOW_COMPARATOR = DefaultComparator.class;
     public static boolean ASCENDING = true;
-    public static double DEADLINE_FACTOR = 0.2;
+    public static double DEADLINE_FACTOR = DEADLINE_FACTOR_LIST.getFirst();
+    //    public static double RELIABILITY_FACTOR = RELIABILITY_FACTOR_LIST.getLast();
     public static double RELIABILITY_FACTOR = 0.998;
-    public static JobSequenceStrategyEnum JOB_SEQUENCE_STRATEGY = JobSequenceStrategyEnum.UPWARD_RANK;
-    public static double NEIGHBORHOOD_FACTOR = 0.6;
-    public static double SLACK_TIME_FACTOR = 0.8;
+    public static JobSequenceStrategyEnum JOB_SEQUENCE_STRATEGY = JOB_SEQUENCE_STRATEGY_LIST.getFirst();
+    public static double NEIGHBORHOOD_FACTOR = NEIGHBORHOOD_FACTOR_LIST.getLast();
+    public static double SLACK_TIME_FACTOR = SLACK_TIME_FACTOR_LIST.getLast();
 
     public static final double ε = 1e-6;
 
@@ -104,7 +105,7 @@ public class Constants {
 
     public static int REPEAT_TIMES = 10;
 
-    public static List<Integer> INSTANCE_NUM_LIST = List.of(20, 40, 60, 80, 100);
+    public static List<Integer> INSTANCE_NUM_LIST = List.of(20, 40, 60, 80);
     public static final List<Class<? extends WorkflowComparatorInterface>> WORKFLOW_COMPARATOR_LIST = List.of(DefaultComparator.class, DepthComparator.class, JobNumComparator.class, LengthComparator.class);
     public static final List<Boolean> ASCENDING_LIST = List.of(true, false);
 

@@ -111,6 +111,7 @@ public abstract class ExperimentStarter {
                             javaPath,
                             "-Xms512m",
                             "-Xmx1g",
+                            "-XX:+EnableDynamicAgentLoading",
                             "-Dstartup.class=" + name,
                             "-cp", System.getProperty("java.class.path"),
                             SimStarter.class.getName(),

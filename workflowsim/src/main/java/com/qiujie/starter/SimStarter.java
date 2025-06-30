@@ -37,6 +37,7 @@ public class SimStarter {
     private double runtime;
 
     private final Marker SIM = MarkerFactory.getMarker(LevelEnum.SIM.name());
+    private static final Marker EXPERIMENT = MarkerFactory.getMarker(LevelEnum.EXPERIMENT.name());
 
 
     public SimStarter(SimParameter simParameter) throws Exception {
@@ -58,7 +59,7 @@ public class SimStarter {
             this.runtime = (end - start) / 1000.0;
             log.info(SIM, String.format("%s: Running %.2fs", planner, runtime));
         } catch (Exception e) {
-            e.printStackTrace();
+            log.error(EXPERIMENT, "An error occurred during the sim [{}]:", planner, e);
         }
     }
 
@@ -110,7 +111,6 @@ public class SimStarter {
         try {
             int logLevel = Integer.parseInt(args[0]);
             Log.setLevel(Level.toLevel(logLevel));
-
             String paramPath = args[1];
             int paramIndex = Integer.parseInt(args[2]);
             String json = FileUtil.readUtf8String(paramPath);
@@ -124,7 +124,7 @@ public class SimStarter {
             FileUtil.writeUtf8String(JSONUtil.toJsonPrettyStr(starter.getResult()), path);
             System.exit(0);
         } catch (Exception e) {
-            e.printStackTrace();
+            log.error(EXPERIMENT, "❌ Failed to start simulation: ", e);
             System.exit(2);
         }
     }
