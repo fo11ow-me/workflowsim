@@ -9,7 +9,7 @@ import java.util.List;
 @Data
 @NoArgsConstructor
 public class SimParameter {
-    private String id;
+    private String name;
     private String experimentName;
     private long seed;
     private List<String> daxList;

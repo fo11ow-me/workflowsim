@@ -7,6 +7,7 @@ import com.qiujie.entity.Result;
 import com.qiujie.entity.SimParameter;
 import com.qiujie.enums.LevelEnum;
 import com.qiujie.util.ExperimentUtil;
+import com.qiujie.util.Log;
 import lombok.AccessLevel;
 import lombok.Setter;
 import org.slf4j.Logger;
@@ -40,6 +41,7 @@ public abstract class ExperimentStarter {
         this.paramList = new ArrayList<>();
         // Create a marker for experiment-specific logging
         SYSTEM = MarkerFactory.getMarker(LevelEnum.SYSTEM.name());
+        Log.setLevel(level);
         start();
     }
 
@@ -81,8 +83,8 @@ public abstract class ExperimentStarter {
 
     protected void addParam(SimParameter simParameter) {
         // Assign a unique ID to the parameter based on the current parameter list size
-        String id = String.format(name + "_%06d", paramList.size());
-        simParameter.setId(id);
+        String name = String.format(this.name + "_%06d", paramList.size());
+        simParameter.setName(name);
         paramList.add(simParameter);
     }
 
@@ -104,9 +106,6 @@ public abstract class ExperimentStarter {
         // Create a fixed thread pool to control the max number of concurrent tasks
         ExecutorService executor = Executors.newFixedThreadPool(maxConcurrent);
         List<Future<?>> futures = new ArrayList<>();
-
-        log.info(SYSTEM, "Progress: 0 / {} ✅ ", totalSims);
-
         for (int index = 0; index < totalSims; index++) {
             final int simIndex = index;
             futures.add(executor.submit(() -> {
@@ -132,9 +131,9 @@ public abstract class ExperimentStarter {
                 } finally {
                     // Increment the finished simulations counter and log progress periodically
                     synchronized (this) {
-                        int done = finishedSims.incrementAndGet();
+                        int done = finishedSims.getAndIncrement();
                         if (done % progressStep == 0 || done == totalSims) {
-                            log.info(SYSTEM, "Progress: {} / {} ✅ ", done, totalSims);
+                            log.info(SYSTEM, "✅  Progress: {} / {}", done, totalSims);
                         }
                     }
                 }
@@ -162,11 +161,11 @@ public abstract class ExperimentStarter {
         List<Result> resultList = new ArrayList<>();
         for (SimParameter simParameter : paramList) {
             // Construct result file path based on simParameter's id
-            File file = new File(RESULT_DIR + name + "_" + simParameter.getId() + ".json");
+            File file = new File(RESULT_DIR + simParameter.getName() + ".json");
 
             // Check if the file exists
             if (!file.exists()) {
-                log.warn("Result file {} does not exist! ❌ ", file.getName());
+                log.warn("❌  Result file {} does not exist!", file.getName());
                 continue;
             }
 
@@ -178,19 +177,19 @@ public abstract class ExperimentStarter {
                 log.info("Successfully collected result file: {}", file.getName()); // Success log
             } catch (Exception e) {
                 // Log error and skip this file, do not throw to avoid breaking overall result collection
-                log.error("Failed to read result file {} ❌ ", file.getName(), e);
+                log.error("❌  Failed to read result file {}", file.getName(), e);
                 continue;
             }
 
             try {
                 // Try to delete the result file after processing, log warning if fails
                 if (file.exists() && !file.delete()) {
-                    log.warn("Failed to delete result file: {} ⚠️ ", file.getName());
+                    log.warn("⚠️  Failed to delete result file: {}", file.getName());
                 } else {
-                    log.info("Successfully deleted result file: {} ✅", file.getName()); // Success log for deletion
+                    log.info("✅  Successfully deleted result file: {}", file.getName()); // Success log for deletion
                 }
             } catch (Exception e) {
-                log.warn("Exception when deleting result file {} ⚠️ ", file.getName(), e);
+                log.warn("⚠️  Exception when deleting result file {}", file.getName(), e);
             }
         }
         return resultList;

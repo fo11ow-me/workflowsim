@@ -74,7 +74,7 @@ public class Constants {
     public static final double INTER_BANDWIDTH = 1e6;
     public static final double INTRA_BANDWIDTH = 10 * INTER_BANDWIDTH;
 
-    public static double LENGTH_FACTOR = 1e5;
+    public static double LENGTH_FACTOR = 1e4;
 
     // data
     public static List<Class<? extends Application>> APP_LIST = List.of(Montage.class, CyberShake.class, Genome.class, LIGO.class, SIPHT.class);
@@ -84,7 +84,7 @@ public class Constants {
     public static final List<Class<? extends WorkflowComparatorInterface>> WORKFLOW_COMPARATOR_LIST = List.of(DefaultComparator.class, DepthComparator.class, JobNumComparator.class, LengthComparator.class);
     public static final List<Boolean> ASCENDING_LIST = List.of(true, false);
     public static final List<Double> DEADLINE_FACTOR_LIST = List.of(0.2);
-    public static final List<Double> RELIABILITY_FACTOR_LIST = List.of(0.92, 0.94, 0.96, 0.98);
+    public static final List<Double> RELIABILITY_FACTOR_LIST = List.of(0.992, 0.994, 0.996, 0.998);
     public static final List<JobSequenceStrategyEnum> JOB_SEQUENCE_STRATEGY_LIST = List.of(JobSequenceStrategyEnum.UPWARD_RANK, JobSequenceStrategyEnum.DOWNWARD_RANK, JobSequenceStrategyEnum.DEADLINE);
     public static final List<Double> NEIGHBORHOOD_FACTOR_LIST = List.of(0.2, 0.4, 0.6, 0.8);
     public static final List<Double> SLACK_TIME_FACTOR_LIST = List.of(0.2, 0.4, 0.6, 0.8);

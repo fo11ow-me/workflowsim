@@ -78,7 +78,7 @@ public abstract class WorkflowPlannerAbstract {
             this.runtime = (end - start) / 1000.0;
             log.info("{}: {}: Finished in {}s", CloudSim.clock(), this, this.runtime);
         } catch (Exception e) {
-            log.error("{}: {}: Planning failed ❌ ", CloudSim.clock(), this, e);
+            log.error("{}: {}: ❌  Planning failed", CloudSim.clock(), this, e);
         }
     }
 

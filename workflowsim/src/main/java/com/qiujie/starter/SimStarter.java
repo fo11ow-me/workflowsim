@@ -108,11 +108,11 @@ public class SimStarter {
             List<SimParameter> paramList = JSONUtil.toList(json, SimParameter.class);
             SimParameter simParameter = paramList.get(paramIndex);
             SimStarter starter = new SimStarter(simParameter);
-            String path = RESULT_DIR + simParameter.getId() + ".json";
+            String path = RESULT_DIR + simParameter.getName() + ".json";
             FileUtil.writeUtf8String(JSONUtil.toJsonPrettyStr(starter.getResult()), path);
             System.exit(0);
         } catch (Exception e) {
-            log.error("Sim failed ❌ ", e);
+            log.error("❌  Sim failed", e);
             System.exit(2);
         }
     }
