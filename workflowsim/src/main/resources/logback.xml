@@ -1,34 +1,64 @@
 <configuration>
+    <!-- Console appender for logging to the console -->
     <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
         <encoder>
-            <pattern>%d{HH:mm:ss.SSS} [%thread] %highlight(%-5level) %yellow(%marker) %cyan(%logger{15}) - %msg%n
-            </pattern>
+            <!-- Log pattern including timestamp, thread, level, marker, logger name, and message -->
+            <pattern>%d{HH:mm:ss.SSS} [%thread] %highlight(%-5level) %yellow(%marker) %cyan(%logger{15}) - %msg%n</pattern>
         </encoder>
     </appender>
 
-    <!-- BOOT and STARTUP Level -->
+    <!-- Custom turbo filter for boot and startup level logs -->
     <turboFilter class="com.qiujie.filter.LogMarkerFilter"/>
 
-    <!-- Log file output directory -->
+    <!-- Property specifying the directory for log files -->
     <property name="LOG_PATH" value="log"/>
-
+    <!-- Property for startup class name, with a default value -->
     <property name="STARTUP_CLASS" value="${startup.class:-default}"/>
 
-    <!-- Rolling file appender configuration -->
+    <!-- Rolling file appender to write logs to files with daily rolling -->
     <appender name="FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <!-- Log file path -->
         <file>${LOG_PATH}/${STARTUP_CLASS}.log</file>
+        <!-- Rolling policy: roll log files based on date -->
         <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+            <!-- Pattern for rolled files, keeps logs per day -->
             <fileNamePattern>${LOG_PATH}/${STARTUP_CLASS}.%d{yyyy-MM-dd}.log</fileNamePattern>
+            <!-- Keep logs for 30 days -->
             <maxHistory>30</maxHistory>
         </rollingPolicy>
         <encoder>
+            <!-- Log pattern for file logs -->
             <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %marker %logger{36} - %msg%n</pattern>
         </encoder>
     </appender>
 
-    <root level="DEBUG">
+    <!-- Async appender for console (STDOUT) -->
+    <appender name="ASYNC_STDOUT" class="ch.qos.logback.classic.AsyncAppender">
+        <!-- Size of the internal queue to buffer logging events -->
+        <queueSize>10000</queueSize>
+        <!-- Threshold for discarding low-priority logs when queue is full (0 means never discard) -->
+        <discardingThreshold>0</discardingThreshold>
+        <!-- If true, never block the caller thread when the queue is full -->
+        <neverBlock>true</neverBlock>
+        <!-- Reference wrapped appender for console -->
         <appender-ref ref="STDOUT"/>
-        <appender-ref ref="FILE"/>
-    </root>
+    </appender>
 
+    <!-- Async appender for file (FILE) -->
+    <appender name="ASYNC_FILE" class="ch.qos.logback.classic.AsyncAppender">
+        <!-- Size of the internal queue to buffer logging events -->
+        <queueSize>10000</queueSize>
+        <!-- Threshold for discarding low-priority logs when queue is full (0 means never discard) -->
+        <discardingThreshold>0</discardingThreshold>
+        <!-- If true, never block the caller thread when the queue is full -->
+        <neverBlock>true</neverBlock>
+        <!-- Reference wrapped appender for file -->
+        <appender-ref ref="FILE"/>
+    </appender>
+
+    <!-- Root logger configuration, logs at DEBUG level and outputs asynchronously to both STDOUT and FILE -->
+    <root level="DEBUG">
+        <appender-ref ref="ASYNC_STDOUT"/>
+        <appender-ref ref="ASYNC_FILE"/>
+    </root>
 </configuration>
