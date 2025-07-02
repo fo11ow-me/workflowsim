@@ -12,6 +12,7 @@ import com.qiujie.util.Log;
 import com.qiujie.util.WorkflowParser;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
+import org.cloudbus.cloudsim.Cloudlet;
 import org.cloudbus.cloudsim.Vm;
 import org.cloudbus.cloudsim.core.CloudSim;
 import org.cloudbus.cloudsim.distributions.ContinuousDistribution;
@@ -71,6 +72,9 @@ public class SimStarter {
         broker.submitWorkflowList(workflowList);
         // start simulation
         CloudSim.startSimulation();
+        if (broker.getCloudletReceivedList().isEmpty()) {
+            throw new IllegalStateException("No cloudlet received");
+        }
         ExperimentUtil.printSimResult(broker.getCloudletReceivedList(), planner.toString());
         if (ENABLE_SIM_DATA) {
             ExperimentUtil.generateSimData(broker.getCloudletReceivedList(), simParameter.getExperimentName() + "_" + planner);
@@ -113,9 +117,7 @@ public class SimStarter {
             System.exit(0);
         } catch (Exception e) {
             log.error("❌  Sim failed", e);
-            System.exit(2);
+            System.exit(1);
         }
     }
-
-
 }
