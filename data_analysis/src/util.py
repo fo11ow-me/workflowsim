@@ -258,7 +258,7 @@ def sanitize_filename(name):
     return re.sub(r'[\\/*?:"<>| ]', '_', str(name))
 
 
-def plot_rpd_comparison_chart(json_path, x_axis='deadlineFactor', save_path=None, chart_title=None, output_dir=None):
+def plot_rpd_comparison_chart(json_path, x_axis='deadlineFactor', chart_title=None, output_dir=None):
     import os
     import json
     import re
@@ -301,10 +301,8 @@ def plot_rpd_comparison_chart(json_path, x_axis='deadlineFactor', save_path=None
     if not output_dir:
         output_dir = '.'  # Default to current directory
 
-    # If no save path is provided, create a default save path
-    if not save_path:
-        save_file_name = f'{base_name}_{x_axis_name}_comparison_chart.png'
-        save_path = os.path.join(output_dir, save_file_name)
+    save_file_name = f'{base_name}_{x_axis_name}_comparison_chart.png'
+    save_path = os.path.join(output_dir, save_file_name)
 
     # 6. Style settings (Recommended style for academic papers)
     sns.set(style='whitegrid', font='Times New Roman', font_scale=1.2)

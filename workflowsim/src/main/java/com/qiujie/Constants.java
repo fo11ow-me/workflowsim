@@ -67,24 +67,24 @@ public class Constants {
     public static final long VM_SIZE = 10000; // image size (Megabyte)
 
     // Transient failure rate of the virtual machine at maximum operating frequency
-    public static final double λ = 1e-6;
+    public static final double λ = 1e-5;
     // Measures the sensitivity of transient fault rate to frequency scaling
     public static final int SR = 2;
 
     public static final double INTER_BANDWIDTH = 1e6;
     public static final double INTRA_BANDWIDTH = 10 * INTER_BANDWIDTH;
 
-    public static double LENGTH_FACTOR = 1e4;
+    public static double LENGTH_FACTOR = 1e3;
 
     // data
-    public static List<Class<? extends Application>> APP_LIST = List.of(Montage.class, CyberShake.class, Genome.class, LIGO.class, SIPHT.class);
+    public static List<Class<? extends Application>> APP_LIST = List.of(Montage.class, CyberShake.class, SIPHT.class);
     public static List<Integer> JOB_NUM_LIST = List.of(50, 100, 200, 400);
-    public static List<Integer> INSTANCE_NUM_LIST = List.of(20, 40, 60, 80);
+    public static int INSTANCE_NUM = 5;
     //  List of parameter ranges
     public static final List<Class<? extends WorkflowComparatorInterface>> WORKFLOW_COMPARATOR_LIST = List.of(DefaultComparator.class, DepthComparator.class, JobNumComparator.class, LengthComparator.class);
     public static final List<Boolean> ASCENDING_LIST = List.of(true, false);
-    public static final List<Double> DEADLINE_FACTOR_LIST = List.of(0.2);
-    public static final List<Double> RELIABILITY_FACTOR_LIST = List.of(0.992, 0.994, 0.996, 0.998);
+    public static final List<Double> DEADLINE_FACTOR_LIST = List.of(0.2, 0.4, 0.6, 0.8);
+    public static final List<Double> RELIABILITY_FACTOR_LIST = List.of(0.92, 0.94, 0.96, 0.98);
     public static final List<JobSequenceStrategyEnum> JOB_SEQUENCE_STRATEGY_LIST = List.of(JobSequenceStrategyEnum.UPWARD_RANK, JobSequenceStrategyEnum.DOWNWARD_RANK, JobSequenceStrategyEnum.DEADLINE);
     public static final List<Double> NEIGHBORHOOD_FACTOR_LIST = List.of(0.2, 0.4, 0.6, 0.8);
     public static final List<Double> SLACK_TIME_FACTOR_LIST = List.of(0.2, 0.4, 0.6, 0.8);
@@ -95,8 +95,8 @@ public class Constants {
     public static double DEADLINE_FACTOR = DEADLINE_FACTOR_LIST.getFirst();
     public static double RELIABILITY_FACTOR = RELIABILITY_FACTOR_LIST.getLast();
     public static JobSequenceStrategyEnum JOB_SEQUENCE_STRATEGY = JOB_SEQUENCE_STRATEGY_LIST.getFirst();
-    public static double NEIGHBORHOOD_FACTOR = NEIGHBORHOOD_FACTOR_LIST.getLast();
-    public static double SLACK_TIME_FACTOR = SLACK_TIME_FACTOR_LIST.getLast();
+    public static double NEIGHBORHOOD_FACTOR = NEIGHBORHOOD_FACTOR_LIST.getFirst();
+    public static double SLACK_TIME_FACTOR = SLACK_TIME_FACTOR_LIST.getFirst();
 
     public static final double ε = 1e-6;
 
@@ -104,7 +104,7 @@ public class Constants {
 
     public static boolean ENABLE_SIM_DATA = false;
 
-    public static int REPEAT_TIMES = 10;
+    public static int REPEAT_TIMES = 5;
 
 
     public static Marker SYSTEM;
