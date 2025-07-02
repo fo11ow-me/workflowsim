@@ -33,7 +33,7 @@ public class Example06 extends ExperimentStarter {
 
 
     @Override
-    protected void init() {
+    protected void addParams() {
         setLevel(Level.WARN);
         List<String> daxList = List.of(
                 "CyberShake_25"

@@ -29,7 +29,7 @@ public class Example05 extends ExperimentStarter {
 
 
     @Override
-    protected void init() {
+    protected void addParams() {
         List<String> daxList = List.of(
                 "CyberShake_25"
                 , "CyberShake_50"

@@ -57,8 +57,8 @@ public abstract class ExperimentStarter {
     private void run() {
         // Create necessary directories for saving parameters, results, simulation data, and experiment data
         createDirs();
-        // Initialize experiment-specific parameters
-        init();
+        // Add sim-specific parameters
+        addParams();
         // Start subprocesses to run simulations concurrently
         startSimProcesses();
         // Collect results from simulation output files
@@ -79,30 +79,27 @@ public abstract class ExperimentStarter {
         FileUtil.mkdir(EXPERIMENT_DATA_DIR);
     }
 
-    protected abstract void init();
+    protected abstract void addParams();
 
     protected void addParam(SimParameter simParameter) {
         // Assign a unique ID to the parameter based on the current parameter list size
-        String name = String.format(this.name + "_%06d", paramList.size());
+        String name = String.format(this.name + "_%08d", paramList.size());
         simParameter.setName(name);
         paramList.add(simParameter);
     }
 
     private void startSimProcesses() {
         int reservedCores = 8;  // Number of CPU cores to reserve for system tasks
-        int progressStep = 10;  // Log progress every 10 completed simulations
+        int totalSims = paramList.size();
+        int progressStep = (int) Math.max(1, Math.sqrt(totalSims));
         String javaPath = System.getProperty("java.home") + "/bin/java";  // Path to Java executable
         int availableCores = Runtime.getRuntime().availableProcessors();
         int maxConcurrent = Math.max(1, availableCores - reservedCores);  // Maximum number of concurrent processes
-        log.info(SYSTEM, "🖥️ Detected CPU cores: {}, setting max concurrent processes: {}", availableCores, maxConcurrent);
-
+        log.info(SYSTEM, "🖥️  Detected CPU cores: {}, setting max concurrent processes: {}", availableCores, maxConcurrent);
         // Write the simulation parameters to a JSON file for subprocess consumption
         String paramFilePath = PARAM_DIR + name + ".json";
         FileUtil.writeUtf8String(JSONUtil.toJsonPrettyStr(paramList), paramFilePath);
-
-        int totalSims = paramList.size();
         AtomicInteger finishedSims = new AtomicInteger();  // Counter for finished simulations
-
         // Create a fixed thread pool to control the max number of concurrent tasks
         ExecutorService executor = Executors.newFixedThreadPool(maxConcurrent);
         List<Future<?>> futures = new ArrayList<>();
@@ -131,7 +128,7 @@ public abstract class ExperimentStarter {
                 } finally {
                     // Increment the finished simulations counter and log progress periodically
                     synchronized (this) {
-                        int done = finishedSims.getAndIncrement();
+                        int done = finishedSims.incrementAndGet();
                         if (done % progressStep == 0 || done == totalSims) {
                             log.info(SYSTEM, "✅  Progress: {} / {}", done, totalSims);
                         }
