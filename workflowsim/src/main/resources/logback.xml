@@ -3,26 +3,25 @@
     <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
         <encoder>
             <!-- Log pattern including timestamp, thread, level, marker, logger name, and message -->
-            <pattern>%d{HH:mm:ss.SSS} [%thread] %highlight(%-5level) %yellow(%marker) %cyan(%logger{15}) - %msg%n</pattern>
+            <pattern>%d{HH:mm:ss.SSS} [%thread] %highlight(%-5level) %yellow(%marker) %cyan(%logger{15}) - %msg%n
+            </pattern>
         </encoder>
     </appender>
 
-    <!-- Custom turbo filter for boot and startup level logs -->
-    <turboFilter class="com.qiujie.filter.LogMarkerFilter"/>
-
     <!-- Property specifying the directory for log files -->
-    <property name="LOG_PATH" value="log"/>
+    <property name="LOG_DIR" value="log"/>
     <!-- Property for startup class name, with a default value -->
     <property name="STARTUP_CLASS" value="${startup.class:-default}"/>
+    <property name="LOG_SUFFIX" value="${log.suffix:-}"/>
 
     <!-- Rolling file appender to write logs to files with daily rolling -->
     <appender name="FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
         <!-- Log file path -->
-        <file>${LOG_PATH}/${STARTUP_CLASS}.log</file>
+        <file>${LOG_DIR}/${STARTUP_CLASS}${LOG_SUFFIX}.log</file>
         <!-- Rolling policy: roll log files based on date -->
         <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
             <!-- Pattern for rolled files, keeps logs per day -->
-            <fileNamePattern>${LOG_PATH}/${STARTUP_CLASS}.%d{yyyy-MM-dd}.log</fileNamePattern>
+            <fileNamePattern>${LOG_DIR}/${STARTUP_CLASS}${LOG_SUFFIX}_%d{yyyy-MM-dd}.log</fileNamePattern>
             <!-- Keep logs for 30 days -->
             <maxHistory>30</maxHistory>
         </rollingPolicy>

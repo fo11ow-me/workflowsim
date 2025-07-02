@@ -12,7 +12,6 @@ import com.qiujie.core.DvfsCloudletSchedulerSpaceShared;
 import com.qiujie.core.WorkflowDatacenter;
 import com.qiujie.entity.*;
 import com.qiujie.entity.Job;
-import com.qiujie.enums.LevelEnum;
 import io.bretty.console.table.Alignment;
 import io.bretty.console.table.ColumnFormatter;
 import io.bretty.console.table.Precision;
@@ -27,8 +26,6 @@ import org.knowm.xchart.SwingWrapper;
 import org.knowm.xchart.XYChart;
 import org.knowm.xchart.XYChartBuilder;
 import org.knowm.xchart.style.Styler;
-import org.slf4j.Marker;
-import org.slf4j.MarkerFactory;
 
 import java.io.File;
 import java.io.IOException;
@@ -42,9 +39,6 @@ import static com.qiujie.Constants.*;
 
 @Slf4j
 public class ExperimentUtil {
-
-    private static final Marker EXPERIMENT = MarkerFactory.getMarker(LevelEnum.SYSTEM.name());
-
     private static List<HostConfig> readHostConfig() {
         // Get the InputStream for the resource file
         InputStream inputStream = ExperimentUtil.class.getClassLoader().getResourceAsStream("config/host.json");
@@ -214,16 +208,18 @@ public class ExperimentUtil {
         List<Result> sortByFinishTime = list.stream().sorted(Comparator.comparingDouble(Result::getFinishTime)).toList();
         List<Result> sortByRetryCount = list.stream().sorted(Comparator.comparingInt(Result::getRetryCount)).toList();
         List<Result> sortByOverdueCount = list.stream().sorted(Comparator.comparingInt(Result::getOverdueCount)).toList();
-        List<Result> sortByRuntime = list.stream().sorted(Comparator.comparingDouble(Result::getPlnRuntime)).toList();
+        List<Result> sortByPlnRuntime = list.stream().sorted(Comparator.comparingDouble(Result::getPlnRuntime)).toList();
+        List<Result> sortByRuntime = list.stream().sorted(Comparator.comparingDouble(Result::getRuntime)).toList();
         Table.Builder builder = new Table.Builder("idx", IntStream.rangeClosed(0, list.size() - 1).boxed().toArray(Number[]::new), ColumnFormatter.number(Alignment.CENTER, 6, Precision.ZERO))
                 .addColumn("Name", list.stream().map(Result::getName).toArray(String[]::new), ColumnFormatter.text(Alignment.CENTER, 80))
                 .addColumn("Elec_Cost", list.stream().map(result -> String.format("%.2f (%d)", result.getElecCost(), sortByElecCost.indexOf(result))).toArray(String[]::new), ColumnFormatter.text(Alignment.CENTER, 20))
                 .addColumn("Finish_Time", list.stream().map(result -> String.format("%.2f (%d)", result.getFinishTime(), sortByFinishTime.indexOf(result))).toArray(String[]::new), ColumnFormatter.text(Alignment.CENTER, 20))
                 .addColumn("Retry_Count", list.stream().map(result -> String.format("%d (%d)", result.getRetryCount(), sortByRetryCount.indexOf(result))).toArray(String[]::new), ColumnFormatter.text(Alignment.CENTER, 15))
                 .addColumn("Overdue_Count", list.stream().map(result -> String.format("%d (%d)", result.getOverdueCount(), sortByOverdueCount.indexOf(result))).toArray(String[]::new), ColumnFormatter.text(Alignment.CENTER, 15))
+                .addColumn("Pln_Runtime", list.stream().map(result -> String.format("%.2f (%d)", result.getPlnRuntime(), sortByPlnRuntime.indexOf(result))).toArray(String[]::new), ColumnFormatter.text(Alignment.CENTER, 15))
                 .addColumn("Runtime", list.stream().map(result -> String.format("%.2f (%d)", result.getPlnRuntime(), sortByRuntime.indexOf(result))).toArray(String[]::new), ColumnFormatter.text(Alignment.CENTER, 15));
         Table table = builder.build();
-        log.info(SYSTEM, "\n                                                                               {} Experiment Result\n{}\n", title, table);
+        log.info("\n                                                                               {} Experiment Result\n{}\n", title, table);
     }
 
 

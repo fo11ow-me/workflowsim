@@ -18,6 +18,8 @@ public class Constants {
     public static final String PARAM_DIR = System.getProperty("user.dir") + File.separator + "tmp" + File.separator + "param" + File.separator;
     public static final String RESULT_DIR = System.getProperty("user.dir") + File.separator + "tmp" + File.separator + "result" + File.separator;
 
+    public static final int RESERVED_CORES = 8;  // Number of CPU cores to reserve for system tasks
+    public static final int TIMEOUT_MINUTES = 10; // Timeout for each simulation in minutes
 
     public static final Level LEVEL = Level.ERROR;
 
@@ -67,7 +69,7 @@ public class Constants {
     public static final long VM_SIZE = 10000; // image size (Megabyte)
 
     // Transient failure rate of the virtual machine at maximum operating frequency
-    public static final double λ = 1e-5;
+    public static final double λ = 1e-6;
     // Measures the sensitivity of transient fault rate to frequency scaling
     public static final int SR = 2;
 
@@ -105,9 +107,4 @@ public class Constants {
     public static boolean ENABLE_SIM_DATA = false;
 
     public static int REPEAT_TIMES = 5;
-
-
-    public static Marker SYSTEM;
-
-
 }
