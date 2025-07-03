@@ -28,6 +28,7 @@ import static com.qiujie.Constants.*;
 public class SimStarter {
 
     private final String name;
+    private final String experimentName;
     private final ContinuousDistribution random;
     private final WorkflowPlannerAbstract planner;
     private final SimParameter simParameter;
@@ -35,7 +36,8 @@ public class SimStarter {
     private Result result;
     private double runtime;
 
-    public SimStarter(SimParameter simParameter) throws Exception {
+    public SimStarter(String experimentName, SimParameter simParameter) throws Exception {
+        this.experimentName = experimentName;
         this.simParameter = simParameter;
         this.random = new UniformDistr(0, 1, simParameter.getSeed());
         // init planner
@@ -44,6 +46,10 @@ public class SimStarter {
         this.planner = (WorkflowPlannerAbstract) constructor.newInstance(random, simParameter.getParameter());
         this.name = planner.toString();
         start();
+    }
+
+    public SimStarter(SimParameter simParameter) throws Exception {
+        this("", simParameter);
     }
 
     public void start() throws Exception {
@@ -77,28 +83,29 @@ public class SimStarter {
         }
         ExperimentUtil.printSimResult(broker.getCloudletReceivedList(), planner.toString());
         if (ENABLE_SIM_DATA) {
-            ExperimentUtil.generateSimData(broker.getCloudletReceivedList(), simParameter.getExperimentName() + "_" + planner);
+            ExperimentUtil.generateSimData(broker.getCloudletReceivedList(), experimentName + "_" + planner);
         }
         setResult(broker);
     }
 
     private void setResult(WorkflowBroker broker) {
-        this.result = new Result(name,
-                ExperimentUtil.getPrefixFromClassName(simParameter.getParameter().getWorkflowComparator()),
-                simParameter.getParameter().isAscending(),
-                simParameter.getParameter().getDeadlineFactor(),
-                simParameter.getParameter().getReliabilityFactor(),
-                simParameter.getParameter().getJobSequenceStrategy().name(),
-                simParameter.getParameter().getNeighborhoodFactor(),
-                simParameter.getParameter().getSlackTimeFactor(),
-                new ArrayList<>(simParameter.getDaxList()),
-                broker.getCloudletReceivedList().stream().mapToDouble(cloudlet -> ((Job) cloudlet).getElecCost()).sum(),
-                broker.getCloudletReceivedList().getLast().getExecFinishTime(),
-                broker.getCloudletReceivedList().stream().mapToInt(cloudlet -> ((Job) cloudlet).getRetryCount()).sum(),
-                (int) broker.getWorkflowList().stream().filter(Workflow::isOverdue).count(),
-                planner.getRuntime(),
-                runtime
-        );
+        this.result = new Result()
+                .setName(name)
+                .setWorkflowComparator(ExperimentUtil.getPrefixFromClassName(simParameter.getParameter().getWorkflowComparator()))
+                .setAscending(simParameter.getParameter().isAscending())
+                .setDeadlineFactor(simParameter.getParameter().getDeadlineFactor())
+                .setReliabilityFactor(simParameter.getParameter().getReliabilityFactor())
+                .setJobSequenceStrategy(simParameter.getParameter().getJobSequenceStrategy().name())
+                .setNeighborhoodFactor(simParameter.getParameter().getNeighborhoodFactor())
+                .setSlackTimeFactor(simParameter.getParameter().getSlackTimeFactor())
+                .setDaxList(new ArrayList<>(simParameter.getDaxList()))
+                .setElecCost(broker.getCloudletReceivedList().stream().mapToDouble(cloudlet -> ((Job) cloudlet).getElecCost()).sum())
+                .setFinishTime(broker.getCloudletReceivedList().getLast().getExecFinishTime())
+                .setRetryCount(broker.getCloudletReceivedList().stream().mapToInt(cloudlet -> ((Job) cloudlet).getRetryCount()).sum())
+                .setOverdueCount((int) broker.getWorkflowList().stream().filter(Workflow::isOverdue).count())
+                .setPlnRuntime(planner.getRuntime())
+                .setRuntime(runtime);
+
     }
 
 
@@ -107,13 +114,14 @@ public class SimStarter {
             int logLevel = Integer.parseInt(args[0]);
             Log.setLevel(Level.toLevel(logLevel));
             String paramPath = args[1];
-            int paramIndex = Integer.parseInt(args[2]);
+            int simIdx = Integer.parseInt(System.getProperty("sim.idx"));
+            String experimentName = System.getProperty("startup.class");
             String json = FileUtil.readUtf8String(paramPath);
             List<SimParameter> paramList = JSONUtil.toList(json, SimParameter.class);
-            SimParameter simParameter = paramList.get(paramIndex);
-            SimStarter starter = new SimStarter(simParameter);
-            String path = RESULT_DIR + simParameter.getName() + ".json";
-            FileUtil.writeUtf8String(JSONUtil.toJsonPrettyStr(starter.getResult()), path);
+            SimParameter simParameter = paramList.get(simIdx);
+            SimStarter starter = new SimStarter(experimentName, simParameter);
+            String resultPath = RESULT_DIR + experimentName + "_" + simIdx + ".json";
+            FileUtil.writeUtf8String(JSONUtil.toJsonPrettyStr(starter.getResult()), resultPath);
             System.exit(0);
         } catch (Exception e) {
             log.error("❌  Sim failed", e);
