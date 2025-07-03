@@ -45,8 +45,8 @@ public class Example05 extends ExperimentStarter {
 //                , "Montage_500"
         );
 
-        addParam(new SimParameter(name, seed, daxList, RandomPlanner.class, new Parameter().setWorkflowComparator(DefaultComparator.class).setAscending(true)));
-        addParam(new SimParameter(name, seed, daxList, RandomPlanner.class, new Parameter().setWorkflowComparator(LengthComparator.class).setAscending(false)));
-        addParam(new SimParameter(name, seed, daxList, HEFTPlanner.class, new Parameter().setWorkflowComparator(DefaultComparator.class).setAscending(true)));
+        addParam(new SimParameter(seed, daxList, RandomPlanner.class, new Parameter().setWorkflowComparator(DefaultComparator.class).setAscending(true)));
+        addParam(new SimParameter(seed, daxList, RandomPlanner.class, new Parameter().setWorkflowComparator(LengthComparator.class).setAscending(false)));
+        addParam(new SimParameter(seed, daxList, HEFTPlanner.class, new Parameter().setWorkflowComparator(DefaultComparator.class).setAscending(true)));
     }
 }

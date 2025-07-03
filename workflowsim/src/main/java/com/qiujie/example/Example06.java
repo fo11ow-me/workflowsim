@@ -48,7 +48,7 @@ public class Example06 extends ExperimentStarter {
         for (Class<? extends WorkflowComparatorInterface> workflowComparator : Constants.WORKFLOW_COMPARATOR_LIST) {
             for (Boolean ascending : Constants.ASCENDING_LIST) {
                 for (int i = 0; i < Constants.REPEAT_TIMES; i++) {
-                    addParam(new SimParameter(name, seed + i, daxList, HEFTPlanner.class,
+                    addParam(new SimParameter(seed + i, daxList, HEFTPlanner.class,
                             new Parameter().setWorkflowComparator(workflowComparator).setAscending(ascending)));
                 }
             }
