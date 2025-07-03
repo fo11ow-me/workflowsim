@@ -1,12 +1,12 @@
 package com.qiujie.entity;
 
-import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.experimental.Accessors;
 
 import java.util.List;
 
 @Data
-@AllArgsConstructor
+@Accessors(chain = true)
 public class Result {
     private String name;
     private String workflowComparator;

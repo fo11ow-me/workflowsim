@@ -2,8 +2,8 @@
     <!-- Console appender for logging to the console -->
     <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
         <encoder>
-            <!-- Log pattern including timestamp, thread, level, marker, logger name, and message -->
-            <pattern>%d{HH:mm:ss.SSS} [%thread] %highlight(%-5level) %yellow(%marker) %cyan(%logger{15}) - %msg%n
+            <!-- Log pattern including timestamp, thread, level, logger name, and message -->
+            <pattern>%d{HH:mm:ss.SSS} [%thread] %highlight(%-5level) %cyan(%logger{15}) - %msg%n
             </pattern>
         </encoder>
     </appender>
@@ -12,22 +12,22 @@
     <property name="LOG_DIR" value="log"/>
     <!-- Property for startup class name, with a default value -->
     <property name="STARTUP_CLASS" value="${startup.class:-default}"/>
-    <property name="LOG_SUFFIX" value="${log.suffix:-}"/>
+    <property name="SIM_IDX" value="${sim.idx:-#}"/>
 
     <!-- Rolling file appender to write logs to files with daily rolling -->
     <appender name="FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
         <!-- Log file path -->
-        <file>${LOG_DIR}/${STARTUP_CLASS}${LOG_SUFFIX}.log</file>
+        <file>${LOG_DIR}/${STARTUP_CLASS}/${SIM_IDX}.log</file>
         <!-- Rolling policy: roll log files based on date -->
         <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
             <!-- Pattern for rolled files, keeps logs per day -->
-            <fileNamePattern>${LOG_DIR}/${STARTUP_CLASS}${LOG_SUFFIX}_%d{yyyy-MM-dd}.log</fileNamePattern>
+            <fileNamePattern>${LOG_DIR}/${STARTUP_CLASS}/${SIM_IDX}_%d{yyyy-MM-dd}.log</fileNamePattern>
             <!-- Keep logs for 30 days -->
             <maxHistory>30</maxHistory>
         </rollingPolicy>
         <encoder>
             <!-- Log pattern for file logs -->
-            <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %marker %logger{36} - %msg%n</pattern>
+            <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n</pattern>
         </encoder>
     </appender>
 

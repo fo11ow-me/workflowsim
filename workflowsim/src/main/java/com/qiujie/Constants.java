@@ -4,7 +4,6 @@ import ch.qos.logback.classic.Level;
 import com.qiujie.comparator.*;
 import com.qiujie.enums.JobSequenceStrategyEnum;
 import generator.app.*;
-import org.slf4j.Marker;
 
 import java.io.File;
 import java.util.List;
@@ -18,8 +17,9 @@ public class Constants {
     public static final String PARAM_DIR = System.getProperty("user.dir") + File.separator + "tmp" + File.separator + "param" + File.separator;
     public static final String RESULT_DIR = System.getProperty("user.dir") + File.separator + "tmp" + File.separator + "result" + File.separator;
 
-    public static final int RESERVED_CORES = 8;  // Number of CPU cores to reserve for system tasks
-    public static final int TIMEOUT_MINUTES = 10; // Timeout for each simulation in minutes
+    public static final int RESERVED_CORES = 4;  // Number of CPU cores to reserve for system tasks
+    public static final int SIM_TIMEOUT_MINUTES = 10; // Timeout for each simulation in minutes
+    public static final int BATCH_SIZE = 1000;
 
     public static final Level LEVEL = Level.ERROR;
 
