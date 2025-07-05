@@ -34,7 +34,6 @@ public class SimStarter {
     private final SimParameter simParameter;
     @Getter
     private Result result;
-    private double runtime;
 
     public SimStarter(String experimentName, SimParameter simParameter) throws Exception {
         this.experimentName = experimentName;
@@ -57,8 +56,9 @@ public class SimStarter {
         long start = System.currentTimeMillis();
         run();
         long end = System.currentTimeMillis();
-        this.runtime = (end - start) / 1000.0;
+        double runtime = (end - start) / 1000.0;
         log.info("{}: Finished in {}s", name, runtime);
+        result.setRuntime(runtime);
     }
 
     private void run() throws Exception {
@@ -103,8 +103,7 @@ public class SimStarter {
                 .setFinishTime(broker.getCloudletReceivedList().getLast().getExecFinishTime())
                 .setRetryCount(broker.getCloudletReceivedList().stream().mapToInt(cloudlet -> ((Job) cloudlet).getRetryCount()).sum())
                 .setOverdueCount((int) broker.getWorkflowList().stream().filter(Workflow::isOverdue).count())
-                .setPlnRuntime(planner.getRuntime())
-                .setRuntime(runtime);
+                .setPlnRuntime(planner.getRuntime());
 
     }
 
