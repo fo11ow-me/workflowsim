@@ -17,8 +17,38 @@ from itertools import combinations
 
 
 def load_json_data(json_path):
-    with open(json_path, 'r', encoding='utf-8') as f:
-        return json.load(f)
+    """
+    Load JSON or JSONL file and return data as a list of dictionaries.
+
+    Supports:
+    - .json: Standard JSON file (array or single object)
+    - .jsonl: JSON Lines file (one JSON object per line)
+
+    :param json_path: Path to the JSON or JSONL file.
+    :return: List of data records.
+    """
+    data = []
+
+    if json_path.endswith('.jsonl'):
+        # Support JSONL format (one JSON object per line)
+        with open(json_path, 'r', encoding='utf-8') as f:
+            for line in f:
+                if line.strip():  # Skip empty lines
+                    data.append(json.loads(line))
+    elif json_path.endswith('.json'):
+        # Support JSON format (could be an array or a single object)
+        with open(json_path, 'r', encoding='utf-8') as f:
+            raw = json.load(f)
+            if isinstance(raw, list):
+                data = raw  # If it's a list, return directly
+            else:
+                data = [raw]  # If it's a single object, wrap in a list
+    else:
+        # Unsupported file type
+        raise ValueError(f"Unsupported file format: {json_path}")
+
+    print(f"✅ Loaded {len(data)} records from {json_path}")
+    return data
 
 
 def save_text(filepath, content):
@@ -82,7 +112,8 @@ def save_mean_ci_plot(df, group_var, target_var, path):
     plt.close()
 
 
-def run_anova(json_path=None, data=None, target_variable="elecCost", group_variables=None, output_dir=None, use_rpd=True,
+def run_anova(json_path=None, data=None, target_variable="elecCost", group_variables=None, output_dir=None,
+              use_rpd=True,
               best_known=None):
     if not group_variables or len(group_variables) == 0:
         raise ValueError("group_variables must contain at least one variable.")
@@ -259,13 +290,6 @@ def sanitize_filename(name):
 
 
 def plot_rpd_comparison_chart(json_path, x_axis='deadlineFactor', chart_title=None, output_dir=None):
-    import os
-    import json
-    import re
-    import pandas as pd
-    import seaborn as sns
-    import matplotlib.pyplot as plt
-
     # 1. Load JSON data
     with open(json_path, 'r', encoding='utf-8') as f:
         raw_data = json.load(f)
@@ -288,9 +312,6 @@ def plot_rpd_comparison_chart(json_path, x_axis='deadlineFactor', chart_title=No
     base_name = os.path.splitext(os.path.basename(json_path))[0]
 
     # Function to sanitize filename by removing illegal characters
-    def sanitize_filename(name):
-        return re.sub(r'[\\/*?:"<>| \[\],]', '_', str(name))
-
     x_axis_name = sanitize_filename(x_axis)
 
     # If no title is provided, create a default title
