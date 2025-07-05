@@ -21,16 +21,16 @@ public class WorkflowGenerator {
 //        generateWorkflows(basePath, Montage.class, Constants.JOB_NUM_LIST, Constants.INSTANCE_NUM_LIST);
 //        generateWorkflows(basePath, CyberShake.class, Constants.JOB_NUM_LIST, Constants.INSTANCE_NUM_LIST);
 
-        List<Class<? extends Application>> classList = List.of(Montage.class, CyberShake.class, Genome.class);
+        List<Class<? extends Application>> classList = List.of(Montage.class, CyberShake.class, Genome.class, SIPHT.class, LIGO.class);
         for (Class<? extends Application> clazz : classList) {
             for (Integer jobNum : Constants.JOB_NUM_LIST) {
                 generateWorkflow(basePath, clazz, jobNum);
             }
         }
 
-//        for (Class<? extends Application> clazz : Constants.APP_LIST) {
-//            generateWorkflows(basePath, clazz, Constants.JOB_NUM_LIST);
-//        }
+        for (Class<? extends Application> clazz : Constants.APP_LIST) {
+            generateWorkflows(basePath, clazz, Constants.JOB_NUM_LIST);
+        }
     }
 
 
@@ -80,11 +80,8 @@ public class WorkflowGenerator {
 
 
     public static void generateWorkflows(String basePath, Class<? extends Application> clazz, List<Integer> jobNumList) throws Exception {
+        File dir = new File(basePath);
         for (Integer jobNum : jobNumList) {
-            File dir = new File(basePath + "\\" + clazz.getSimpleName() + "\\" + jobNum);
-            if (!dir.exists()) {
-                dir.mkdirs();
-            }
             Application app = clazz.getDeclaredConstructor().newInstance();
             RunAll.run(app, new File(dir.getAbsolutePath() + "\\" + app.getClass().getSimpleName() + "_" + jobNum + ".xml"), "-n", jobNum + "");
         }
