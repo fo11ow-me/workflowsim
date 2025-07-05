@@ -55,9 +55,13 @@
         <appender-ref ref="FILE"/>
     </appender>
 
-    <!-- Root logger configuration, logs at DEBUG level and outputs asynchronously to both STDOUT and FILE -->
+    <!-- Enable JVM shutdown hook to flush and close appenders gracefully -->
+    <shutdownHook/>
+
+    <!--    Root logger configuration, logs at DEBUG level and outputs asynchronously to both STDOUT and FILE-->
     <root level="DEBUG">
         <appender-ref ref="ASYNC_STDOUT"/>
         <appender-ref ref="ASYNC_FILE"/>
     </root>
+
 </configuration>
