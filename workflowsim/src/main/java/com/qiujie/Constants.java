@@ -12,8 +12,8 @@ public class Constants {
 
 
     public static final String DAX_DIR = System.getProperty("user.dir") + File.separator + "data" + File.separator + "dax" + File.separator;
-    public static final String SIM_DATA_DIR = System.getProperty("user.dir") + File.separator + "data" + File.separator + "sim" + File.separator;
-    public static final String EXPERIMENT_DATA_DIR = System.getProperty("user.dir") + File.separator + "data" + File.separator + "experiment" + File.separator;
+    public static final String SIM_DIR = System.getProperty("user.dir") + File.separator + "data" + File.separator + "sim" + File.separator;
+    public static final String EXPERIMENT_DIR = System.getProperty("user.dir") + File.separator + "data" + File.separator + "experiment" + File.separator;
     public static final String PARAM_DIR = System.getProperty("user.dir") + File.separator + "tmp" + File.separator + "param" + File.separator;
     public static final String RESULT_DIR = System.getProperty("user.dir") + File.separator + "tmp" + File.separator + "result" + File.separator;
 
@@ -28,7 +28,7 @@ public class Constants {
 
     public static final int DCS = 10;
     public static final int DC_HOSTS = 10;
-    public static double DC_SCHEDULING_INTERVAL = 0;
+    public static final double DC_SCHEDULING_INTERVAL = 0;
 
     /**
      * Electricity price matrix for data centers (unit: yuan/kWh)
@@ -76,17 +76,18 @@ public class Constants {
     public static final double INTER_BANDWIDTH = 1e6;
     public static final double INTRA_BANDWIDTH = 10 * INTER_BANDWIDTH;
 
-    public static double LENGTH_FACTOR = 1e3;
+    public static double LENGTH_FACTOR = 1;
 
     // data
-    public static List<Class<? extends Application>> APP_LIST = List.of(Montage.class, CyberShake.class, SIPHT.class);
+    public static List<Class<? extends Application>> APP_LIST = List.of(Montage.class, SIPHT.class, CyberShake.class, LIGO.class, Genome.class);
     public static List<Integer> JOB_NUM_LIST = List.of(50, 100, 200, 400);
     public static int INSTANCE_NUM = 5;
+
     //  List of parameter ranges
     public static final List<Class<? extends WorkflowComparatorInterface>> WORKFLOW_COMPARATOR_LIST = List.of(DefaultComparator.class, DepthComparator.class, JobNumComparator.class, LengthComparator.class);
     public static final List<Boolean> ASCENDING_LIST = List.of(true, false);
     public static final List<Double> DEADLINE_FACTOR_LIST = List.of(0.2, 0.4, 0.6, 0.8);
-    public static final List<Double> RELIABILITY_FACTOR_LIST = List.of(0.92, 0.94, 0.96, 0.98);
+    public static final List<Double> RELIABILITY_FACTOR_LIST = List.of(0.2, 0.4, 0.6, 0.8);
     public static final List<JobSequenceStrategyEnum> JOB_SEQUENCE_STRATEGY_LIST = List.of(JobSequenceStrategyEnum.UPWARD_RANK, JobSequenceStrategyEnum.DOWNWARD_RANK, JobSequenceStrategyEnum.DEADLINE);
     public static final List<Double> NEIGHBORHOOD_FACTOR_LIST = List.of(0.2, 0.4, 0.6, 0.8);
     public static final List<Double> SLACK_TIME_FACTOR_LIST = List.of(0.2, 0.4, 0.6, 0.8);
@@ -102,7 +103,7 @@ public class Constants {
 
     public static final double ε = 1e-6;
 
-    public static int MAX_RETRY_COUNT = 10;
+    public static final int MAX_RETRY_COUNT = 10;
 
     public static boolean ENABLE_SIM_DATA = false;
 

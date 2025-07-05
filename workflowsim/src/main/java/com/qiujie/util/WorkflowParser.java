@@ -49,10 +49,8 @@ public class WorkflowParser {
                     long length = 0;
                     String runtime = node.getAttributeValue("runtime");
                     if (runtime != null) {
-                        length = (long) (Constants.LENGTH_FACTOR * Double.parseDouble(runtime));
-                        if (length < 100) {
-                            length = 100;
-                        }
+//                        length = Math.max((long) (Constants.LENGTH_FACTOR * Double.parseDouble(runtime)), 1);
+                        length = (long) Math.max(Double.parseDouble(runtime), 1);
                     } else {
                         log.error("Cannot find runtime for " + id);
                     }
@@ -70,10 +68,7 @@ public class WorkflowParser {
                             double size = 0.0;
                             String fileSize = fileNode.getAttributeValue("size");
                             if (fileSize != null) {
-                                size = Double.parseDouble(fileSize);
-                                if (size < 100) {
-                                    size = 100;
-                                }
+                                size = Math.max(Double.parseDouble(fileSize), 1);
                             } else {
                                 log.warn("File size not found for " + fileName);
                             }

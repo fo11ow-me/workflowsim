@@ -4,7 +4,7 @@
       <div class="file-input">
         <label for="jsonFile">
           <span class="icon">📁</span>
-          <span>select gantt file</span>
+          <span>select sim file</span>
         </label>
         <input
             type="file"

@@ -237,14 +237,14 @@ public class ExperimentUtil {
                     .setEndTime(DateUtil.format(new Date(baseMilliseconds + Math.round(job.getExecFinishTime() * 1000)), "yyyy-MM-dd HH:mm:ss")).setVmId(job.getGuestId()).setChildList(childList).setDepth(job.getDepth()));
         }
         String jsonStr = JSONUtil.toJsonPrettyStr(taskList);
-        String path = SIM_DATA_DIR + str + ".json";
+        String path = SIM_DIR + str + ".json";
         FileUtil.writeUtf8String(jsonStr, path);
     }
 
 
     public static void generateExperimentData(List<Result> list, String str) {
         String jsonStr = JSONUtil.toJsonPrettyStr(list);
-        String path = EXPERIMENT_DATA_DIR + str + ".json";
+        String path = EXPERIMENT_DIR + str + ".json";
         FileUtil.writeUtf8String(jsonStr, path);
     }
 

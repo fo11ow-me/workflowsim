@@ -55,8 +55,8 @@ public abstract class ExperimentStarter {
     }
 
     private void createDirs() {
-        FileUtil.mkdir(EXPERIMENT_DATA_DIR);
-        FileUtil.mkdir(SIM_DATA_DIR);
+        FileUtil.mkdir(EXPERIMENT_DIR);
+        FileUtil.mkdir(SIM_DIR);
         FileUtil.mkdir(PARAM_DIR);
         FileUtil.mkdir(RESULT_DIR);
     }
@@ -80,7 +80,7 @@ public abstract class ExperimentStarter {
         String paramPath = PARAM_DIR + name + ".json";
         FileUtil.writeUtf8String(JSONUtil.toJsonPrettyStr(paramList), paramPath);
 
-        AtomicInteger completedSims = new AtomicInteger();
+        AtomicInteger counter = new AtomicInteger();
         ExecutorService executor = Executors.newFixedThreadPool(maxConcurrent);
 
         // Writer thread (consumer) writes results to file from the queue
@@ -118,12 +118,12 @@ public abstract class ExperimentStarter {
                 } catch (Exception e) {
                     log.error("❌  Failed to start sim {}", simIdx, e);
                 } finally {
-                    int done = completedSims.incrementAndGet();
-                    if (done == 1 || done == totalSims || done % progressStep == 0) {
-                        log.info("✅  Progress: {} / {}", done, totalSims);
+                    int count = counter.incrementAndGet();
+                    if (count == 1 || count == totalSims || count % progressStep == 0) {
+                        log.info("✅  Progress: {} / {}", count, totalSims);
                     }
                     // After all tasks finish, put poison pill to signal writer thread to stop
-                    if (done == totalSims) {
+                    if (count == totalSims) {
                         try {
                             resultQueue.put(POISON_PILL);
                         } catch (InterruptedException e) {
@@ -154,7 +154,7 @@ public abstract class ExperimentStarter {
      */
     private Thread createWriterThread(BlockingQueue<Result> resultQueue, ExecutorService executor) {
         Thread writerThread = new Thread(() -> {
-            try (BufferedWriter writer = new BufferedWriter(new FileWriter(EXPERIMENT_DATA_DIR + name + ".jsonl", false))) {
+            try (BufferedWriter writer = new BufferedWriter(new FileWriter(EXPERIMENT_DIR + name + ".jsonl", false))) {
                 List<Result> batch = new ArrayList<>();
                 while (true) {
                     Result result = resultQueue.poll(1, TimeUnit.SECONDS);
@@ -174,6 +174,7 @@ public abstract class ExperimentStarter {
                 // Write remaining results
                 if (!batch.isEmpty()) {
                     writeBatch(writer, batch);
+                    batch.clear();
                 }
             } catch (IOException | InterruptedException e) {
                 log.error("❌  Failed to write results", e);
