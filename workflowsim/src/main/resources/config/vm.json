@@ -2,141 +2,66 @@
   {
     "name": "type0",
     "pes": 1,
-    "mips": 520,
-    "frequency": 2.6,
+    "mips": 460,
+    "frequency": 2.3,
     "fvConfigList": [
-      {
-        "frequency": 1.8,
-        "power": 35
-      },
-      {
-        "frequency": 2.0,
-        "power": 45
-      },
-      {
-        "frequency": 2.3,
-        "power": 55
-      },
-      {
-        "frequency": 2.5,
-        "power": 65
-      },
-      {
-        "frequency": 2.6,
-        "power": 85
-      }
+      { "frequency": 1.5, "power": 35 },
+      { "frequency": 1.7, "power": 45 },
+      { "frequency": 1.9, "power": 55 },
+      { "frequency": 2.1, "power": 70 },
+      { "frequency": 2.3, "power": 85 }
     ]
   },
   {
     "name": "type1",
     "pes": 1,
-    "mips": 600,
-    "frequency": 3.0,
+    "mips": 480,
+    "frequency": 2.4,
     "fvConfigList": [
-      {
-        "frequency": 2.1,
-        "power": 50
-      },
-      {
-        "frequency": 2.4,
-        "power": 70
-      },
-      {
-        "frequency": 2.7,
-        "power": 90
-      },
-      {
-        "frequency": 2.9,
-        "power": 110
-      },
-      {
-        "frequency": 3.0,
-        "power": 140
-      }
+      { "frequency": 1.6, "power": 40 },
+      { "frequency": 1.8, "power": 50 },
+      { "frequency": 2.0, "power": 65 },
+      { "frequency": 2.2, "power": 80 },
+      { "frequency": 2.4, "power": 100 }
     ]
   },
   {
     "name": "type2",
     "pes": 1,
-    "mips": 440,
-    "frequency": 2.2,
+    "mips": 520,
+    "frequency": 2.6,
     "fvConfigList": [
-      {
-        "frequency": 1.5,
-        "power": 40
-      },
-      {
-        "frequency": 1.7,
-        "power": 55
-      },
-      {
-        "frequency": 1.9,
-        "power": 70
-      },
-      {
-        "frequency": 2.1,
-        "power": 85
-      },
-      {
-        "frequency": 2.2,
-        "power": 110
-      }
+      { "frequency": 1.8, "power": 45 },
+      { "frequency": 2.0, "power": 60 },
+      { "frequency": 2.2, "power": 75 },
+      { "frequency": 2.4, "power": 95 },
+      { "frequency": 2.6, "power": 115 }
     ]
   },
   {
     "name": "type3",
     "pes": 1,
-    "mips": 440,
-    "frequency": 2.2,
+    "mips": 540,
+    "frequency": 2.7,
     "fvConfigList": [
-      {
-        "frequency": 1.5,
-        "power": 25
-      },
-      {
-        "frequency": 1.7,
-        "power": 35
-      },
-      {
-        "frequency": 1.9,
-        "power": 45
-      },
-      {
-        "frequency": 2.1,
-        "power": 55
-      },
-      {
-        "frequency": 2.2,
-        "power": 75
-      }
+      { "frequency": 1.9, "power": 45 },
+      { "frequency": 2.1, "power": 55 },
+      { "frequency": 2.3, "power": 75 },
+      { "frequency": 2.5, "power": 100 },
+      { "frequency": 2.7, "power": 125 }
     ]
   },
   {
     "name": "type4",
     "pes": 1,
-    "mips": 560,
-    "frequency": 2.8,
+    "mips": 580,
+    "frequency": 2.9,
     "fvConfigList": [
-      {
-        "frequency": 1.9,
-        "power": 40
-      },
-      {
-        "frequency": 2.2,
-        "power": 50
-      },
-      {
-        "frequency": 2.4,
-        "power": 60
-      },
-      {
-        "frequency": 2.6,
-        "power": 80
-      },
-      {
-        "frequency": 2.8,
-        "power": 105
-      }
+      { "frequency": 2.1, "power": 50 },
+      { "frequency": 2.3, "power": 65 },
+      { "frequency": 2.5, "power": 90 },
+      { "frequency": 2.7, "power": 115 },
+      { "frequency": 2.9, "power": 145 }
     ]
   }
 ]
