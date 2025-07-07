@@ -49,7 +49,6 @@ public class Example04 {
 //                "Montage_1000",
                 "Montage_100");
         VMS = 50;
-        LENGTH_FACTOR = 1e5;
         SimStarter simStarter = new SimStarter(new SimParameter( seed, daxList, HEFTPlanner.class, new Parameter().setWorkflowComparator(DepthComparator.class).setAscending(true)));
 //        Log.setLevel(Level.OFF);
         SimStarter simStarter1 = new SimStarter(new SimParameter( seed, daxList, HEFTPlanner.class, new Parameter().setWorkflowComparator(LengthComparator.class).setAscending(true)));

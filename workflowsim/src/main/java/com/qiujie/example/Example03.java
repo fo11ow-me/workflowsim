@@ -32,7 +32,7 @@ public class Example03 {
         ContinuousDistribution random = new UniformDistr(0, 1, send);
         ClockModifier.modifyClockMethod();
         org.cloudbus.cloudsim.Log.disable();
-        CloudSim.init(2, Calendar.getInstance(), TRACE_FLAG);
+        CloudSim.init(2, Calendar.getInstance(), TRACE_FLAG,MIN_TIME_BETWEEN_EVENTS);
         Log.setLevel(Level.TRACE);
         List<String> daxList = List.of(
 //                "Inspiral_1000",

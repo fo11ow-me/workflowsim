@@ -120,7 +120,7 @@ public abstract class ExperimentStarter {
                 } finally {
                     int count = counter.incrementAndGet();
                     if (count == 1 || count == totalSims || count % progressStep == 0) {
-                        log.info("✅  Progress: {} / {}", count, totalSims);
+                        log.info("✅  Progress: {}% ({} / {})", count * 100.0 / totalSims, count, totalSims);
                     }
                     // After all tasks finish, put poison pill to signal writer thread to stop
                     if (count == totalSims) {
