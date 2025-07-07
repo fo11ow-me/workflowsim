@@ -2,16 +2,20 @@ package com.qiujie.core;
 
 import static com.qiujie.Constants.*;
 
+import com.qiujie.entity.DvfsVm;
+import com.qiujie.entity.Fv;
 import com.qiujie.entity.Job;
 import com.qiujie.util.ExperimentUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.cloudbus.cloudsim.Cloudlet;
 import org.cloudbus.cloudsim.CloudletSchedulerSpaceShared;
 import org.cloudbus.cloudsim.Consts;
+import org.cloudbus.cloudsim.Vm;
 import org.cloudbus.cloudsim.core.CloudSim;
 import org.cloudbus.cloudsim.distributions.ContinuousDistribution;
 
 import java.util.List;
+import java.util.stream.Stream;
 
 @Slf4j
 public class DvfsCloudletSchedulerSpaceShared extends CloudletSchedulerSpaceShared {
@@ -51,6 +55,11 @@ public class DvfsCloudletSchedulerSpaceShared extends CloudletSchedulerSpaceShar
                 job.setCloudletLength(job.getCloudletFinishedSoFar() / Consts.MILLION + job.getLength());
                 job.updateRetryCount();
                 log.warn("{}: Retry {} for Job #{} {}", CloudSim.clock(), job.getRetryCount(), job.getCloudletId(), job.getName());
+                if (ENABLE_DVFS) {
+                    DvfsVm vm = (DvfsVm) job.getFv().getVm();
+                    int index = Math.max(vm.getFvList().indexOf(job.getFv()) - 1, 0);
+                    job.setFv(vm.getFvList().get(index));
+                }
             }
         }
 
