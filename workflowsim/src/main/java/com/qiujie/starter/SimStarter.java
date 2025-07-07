@@ -12,7 +12,6 @@ import com.qiujie.util.Log;
 import com.qiujie.util.WorkflowParser;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
-import org.cloudbus.cloudsim.Cloudlet;
 import org.cloudbus.cloudsim.Vm;
 import org.cloudbus.cloudsim.core.CloudSim;
 import org.cloudbus.cloudsim.distributions.ContinuousDistribution;
@@ -27,6 +26,7 @@ import static com.qiujie.Constants.*;
 @Slf4j
 public class SimStarter {
 
+    private final int simIdx;
     private final String name;
     private final String experimentName;
     private final ContinuousDistribution random;
@@ -35,7 +35,8 @@ public class SimStarter {
     @Getter
     private Result result;
 
-    public SimStarter(String experimentName, SimParameter simParameter) throws Exception {
+    public SimStarter(int simIdx, String experimentName, SimParameter simParameter) throws Exception {
+        this.simIdx = simIdx;
         this.experimentName = experimentName;
         this.simParameter = simParameter;
         this.random = new UniformDistr(0, 1, simParameter.getSeed());
@@ -48,7 +49,7 @@ public class SimStarter {
     }
 
     public SimStarter(SimParameter simParameter) throws Exception {
-        this("", simParameter);
+        this(0, "", simParameter);
     }
 
     public void start() throws Exception {
@@ -65,7 +66,7 @@ public class SimStarter {
         ClockModifier.modifyClockMethod();
         org.cloudbus.cloudsim.Log.disable();
         // init cloudsim
-        CloudSim.init(USERS, Calendar.getInstance(), TRACE_FLAG);
+        CloudSim.init(USERS, Calendar.getInstance(), TRACE_FLAG, MIN_TIME_BETWEEN_EVENTS);
         // create datacenters
         ExperimentUtil.createDatacenters();
         // create broker
@@ -83,13 +84,16 @@ public class SimStarter {
         }
         ExperimentUtil.printSimResult(broker.getCloudletReceivedList(), planner.toString());
         if (ENABLE_SIM_DATA) {
-            ExperimentUtil.generateSimData(broker.getCloudletReceivedList(), experimentName + "_" + planner);
+            ExperimentUtil.generateSimData(broker.getCloudletReceivedList(), experimentName + "_" + simIdx + "_" + planner);
         }
         setResult(broker);
     }
 
     private void setResult(WorkflowBroker broker) {
+        int finishedCloudlets = broker.getCloudletReceivedList().size();
+        int totalCloudlets = broker.getWorkflowList().stream().mapToInt(Workflow::getJobNum).sum();
         this.result = new Result()
+                .setSimIdx(simIdx)
                 .setName(name)
                 .setWorkflowComparator(ExperimentUtil.getPrefixFromClassName(simParameter.getParameter().getWorkflowComparator()))
                 .setAscending(simParameter.getParameter().isAscending())
@@ -99,6 +103,7 @@ public class SimStarter {
                 .setNeighborhoodFactor(simParameter.getParameter().getNeighborhoodFactor())
                 .setSlackTimeFactor(simParameter.getParameter().getSlackTimeFactor())
                 .setDaxList(new ArrayList<>(simParameter.getDaxList()))
+                .setCompletionDetail(String.format("%.2f%% (%d / %d)", finishedCloudlets * 100.0 / totalCloudlets, finishedCloudlets, totalCloudlets))
                 .setElecCost(broker.getCloudletReceivedList().stream().mapToDouble(cloudlet -> ((Job) cloudlet).getElecCost()).sum())
                 .setFinishTime(broker.getCloudletReceivedList().getLast().getExecFinishTime())
                 .setRetryCount(broker.getCloudletReceivedList().stream().mapToInt(cloudlet -> ((Job) cloudlet).getRetryCount()).sum())
@@ -118,7 +123,7 @@ public class SimStarter {
             String json = FileUtil.readUtf8String(paramPath);
             List<SimParameter> paramList = JSONUtil.toList(json, SimParameter.class);
             SimParameter simParameter = paramList.get(simIdx);
-            SimStarter starter = new SimStarter(experimentName, simParameter);
+            SimStarter starter = new SimStarter(simIdx, experimentName, simParameter);
             String resultPath = RESULT_DIR + experimentName + "_" + simIdx + ".json";
             FileUtil.writeUtf8String(JSONUtil.toJsonPrettyStr(starter.getResult()), resultPath);
             System.exit(0);
