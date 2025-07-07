@@ -18,13 +18,14 @@ public class Constants {
     public static final String RESULT_DIR = System.getProperty("user.dir") + File.separator + "tmp" + File.separator + "result" + File.separator;
 
     public static final int RESERVED_CORES = 4;  // Number of CPU cores to reserve for system tasks
-    public static final int SIM_TIMEOUT_MINUTES = 10; // Timeout for each simulation in minutes
+    public static final int SIM_TIMEOUT_MINUTES = 20; // Timeout for each simulation in minutes
     public static final int BATCH_SIZE = 1000;
 
     public static final Level LEVEL = Level.ERROR;
 
     public static final int USERS = 1;
     public static final boolean TRACE_FLAG = false;
+    public static final double MIN_TIME_BETWEEN_EVENTS = 0.0001;
 
     public static final int DCS = 10;
     public static final int DC_HOSTS = 10;
@@ -76,10 +77,8 @@ public class Constants {
     public static final double INTER_BANDWIDTH = 1e6;
     public static final double INTRA_BANDWIDTH = 10 * INTER_BANDWIDTH;
 
-    public static double LENGTH_FACTOR = 1;
-
     // data
-    public static List<Class<? extends Application>> APP_LIST = List.of(Montage.class, SIPHT.class, CyberShake.class, LIGO.class, Genome.class);
+    public static List<Class<? extends Application>> APP_LIST = List.of(Montage.class, Genome.class);
     public static List<Integer> JOB_NUM_LIST = List.of(50, 100, 200, 400);
     public static int INSTANCE_NUM = 5;
 
@@ -90,7 +89,7 @@ public class Constants {
     public static final List<Double> RELIABILITY_FACTOR_LIST = List.of(0.2, 0.4, 0.6, 0.8);
     public static final List<JobSequenceStrategyEnum> JOB_SEQUENCE_STRATEGY_LIST = List.of(JobSequenceStrategyEnum.UPWARD_RANK, JobSequenceStrategyEnum.DOWNWARD_RANK, JobSequenceStrategyEnum.DEADLINE);
     public static final List<Double> NEIGHBORHOOD_FACTOR_LIST = List.of(0.2, 0.4, 0.6, 0.8);
-    public static final List<Double> SLACK_TIME_FACTOR_LIST = List.of(0.2, 0.4, 0.6, 0.8);
+//    public static final List<Double> SLACK_TIME_FACTOR_LIST = List.of(0.2, 0.4, 0.6, 0.8);
 
     // // default parameter values
     public static Class<? extends WorkflowComparatorInterface> WORKFLOW_COMPARATOR = WORKFLOW_COMPARATOR_LIST.getFirst();
@@ -99,13 +98,15 @@ public class Constants {
     public static double RELIABILITY_FACTOR = RELIABILITY_FACTOR_LIST.getLast();
     public static JobSequenceStrategyEnum JOB_SEQUENCE_STRATEGY = JOB_SEQUENCE_STRATEGY_LIST.getFirst();
     public static double NEIGHBORHOOD_FACTOR = NEIGHBORHOOD_FACTOR_LIST.getFirst();
-    public static double SLACK_TIME_FACTOR = SLACK_TIME_FACTOR_LIST.getFirst();
+    public static double SLACK_TIME_FACTOR = 1;
 
     public static final double ε = 1e-6;
 
     public static final int MAX_RETRY_COUNT = 10;
 
-    public static boolean ENABLE_SIM_DATA = false;
+    public static final boolean ENABLE_DVFS = false;
 
-    public static int REPEAT_TIMES = 5;
+    public static final boolean ENABLE_SIM_DATA = false;
+
+    public static final int REPEAT_TIMES = 5;
 }

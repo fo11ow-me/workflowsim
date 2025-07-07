@@ -1,7 +1,6 @@
 
 package com.qiujie.util;
 
-import com.qiujie.Constants;
 import com.qiujie.entity.File;
 import com.qiujie.entity.Job;
 import com.qiujie.entity.Workflow;
@@ -46,15 +45,8 @@ public class WorkflowParser {
             switch (node.getName().toLowerCase()) {
                 case "job":
                     String id = node.getAttributeValue("id");
-                    long length = 0;
-                    String runtime = node.getAttributeValue("runtime");
-                    if (runtime != null) {
-//                        length = Math.max((long) (Constants.LENGTH_FACTOR * Double.parseDouble(runtime)), 1);
-                        length = (long) Math.max(Double.parseDouble(runtime), 1);
-                    } else {
-                        log.error("Cannot find runtime for " + id);
-                    }
-                    Job job = new Job(dax + "_" + id, length);
+                    double runtime = Math.max(Double.parseDouble(node.getAttributeValue("runtime")), 0);
+                    Job job = new Job(dax + "_" + id, (long) runtime);
                     for (Element fileNode : node.getChildren()) {
                         if (fileNode.getName().equalsIgnoreCase("uses")) {
                             String fileName = fileNode.getAttributeValue("name"); // DAX version 3.3
@@ -65,13 +57,7 @@ public class WorkflowParser {
                                 log.error("File name not found");
                             }
                             String link = fileNode.getAttributeValue("link");
-                            double size = 0.0;
-                            String fileSize = fileNode.getAttributeValue("size");
-                            if (fileSize != null) {
-                                size = Math.max(Double.parseDouble(fileSize), 1);
-                            } else {
-                                log.warn("File size not found for " + fileName);
-                            }
+                            double size = Math.max(Double.parseDouble(fileNode.getAttributeValue("size")), 0);
                             switch (link) {
                                 case "input":
                                     job.getPredInputFileList().add(new File(fileName, size));

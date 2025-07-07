@@ -32,12 +32,11 @@ public class Example01 {
         long send = System.currentTimeMillis();
         ClockModifier.modifyClockMethod();
         org.cloudbus.cloudsim.Log.disable();
-        CloudSim.init(USERS, Calendar.getInstance(), TRACE_FLAG);
+        CloudSim.init(USERS, Calendar.getInstance(), TRACE_FLAG, MIN_TIME_BETWEEN_EVENTS);
         Log.setLevel(Level.TRACE);
         String dax = "Montage_50";
         // basic parameters
         ContinuousDistribution random = new UniformDistr(0, 1, send);
-        LENGTH_FACTOR = 1e5;
 
         // create datacenters
         List<Datacenter> datacenterList = ExperimentUtil.createDatacenters();
