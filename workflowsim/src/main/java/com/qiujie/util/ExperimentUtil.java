@@ -134,16 +134,18 @@ public class ExperimentUtil {
     public static List<Vm> createVms(final ContinuousDistribution random, int userId) {
         List<Vm> list = new ArrayList<>();
         List<VmConfig> vmConfigList = readVmConfig();
+        double minFrequency = vmConfigList.stream().mapToDouble(VmConfig::getFrequency).min().getAsDouble();
         //create VMs
         for (int i = 0; i < VMS; i++) {
-            VmConfig vmConfig = vmConfigList.get(i % vmConfigList.size());
+            VmConfig vmConfig = getRandomElement(random, vmConfigList);
             DvfsVm vm = new DvfsVm(i, userId, vmConfig.getMips(), vmConfig.getPes(), vmConfig.getFrequency(), VM_RAM, VM_BW, VM_SIZE, VMM, new DvfsCloudletSchedulerSpaceShared(random));
             vm.setType(vmConfig.getName());
             List<Fv> fvList = new ArrayList<>();
+            double vm_λ = λ * minFrequency / vmConfig.getFrequency();
             List<FvConfig> fvConfigList = vmConfig.getFvConfigList();
             for (FvConfig fvConfig : fvConfigList) {
                 // smaller frequency, bigger lambda (transient fault rate)
-                double lambda = λ * Math.pow(10, (SR * (vmConfig.getFrequency() - fvConfig.getFrequency()) / (vmConfig.getFrequency() - fvConfigList.getLast().getFrequency())));
+                double lambda = vm_λ * Math.pow(10, (SR * (vmConfig.getFrequency() - fvConfig.getFrequency()) / (vmConfig.getFrequency() - fvConfigList.getLast().getFrequency())));
                 double mips = vmConfig.getMips() * fvConfig.getFrequency() / vmConfig.getFrequency();
                 int level = fvConfigList.size() - 1 - fvConfigList.indexOf(fvConfig);
                 Fv fv = new Fv()
@@ -179,19 +181,19 @@ public class ExperimentUtil {
                 .addColumn("Vm_MIPS", list.stream().map(job -> String.format("%.2f (L%d)", job.getFv().getMips(), job.getFv().getLevel())).toArray(String[]::new), ColumnFormatter.text(Alignment.CENTER, 15))
                 .addColumn("Cloudlet_Length", list.stream().map(Cloudlet::getCloudletLength).toArray(Number[]::new), ColumnFormatter.number(Alignment.CENTER, 20, Precision.ZERO))
                 .addColumn("Length", list.stream().map(Job::getLength).toArray(Number[]::new), ColumnFormatter.number(Alignment.CENTER, 15, Precision.ZERO))
-//                .addColumn("Length_Check", list.stream().map(job -> job.getCloudletLength() - job.getLength() - job.getFv().getMips() * job.getFileTransferTime()).toArray(Number[]::new), ColumnFormatter.number(Alignment.CENTER, 15, Precision.ZERO))
-//                .addColumn("Transfer_Time", list.stream().map(Job::getFileTransferTime).toArray(Number[]::new), ColumnFormatter.number(Alignment.CENTER, 15, Precision.TWO))
+                .addColumn("Length_Check", list.stream().map(job -> job.getCloudletLength() - job.getLength() - job.getFv().getMips() * job.getFileTransferTime()).toArray(Number[]::new), ColumnFormatter.number(Alignment.CENTER, 15, Precision.ZERO))
+                .addColumn("Transfer_Time", list.stream().map(Job::getFileTransferTime).toArray(Number[]::new), ColumnFormatter.number(Alignment.CENTER, 15, Precision.TWO))
                 .addColumn("Start_Time", list.stream().map(Cloudlet::getExecStartTime).toArray(Number[]::new), ColumnFormatter.number(Alignment.CENTER, 15, Precision.TWO))
                 .addColumn("Finish_Time", list.stream().map(Cloudlet::getExecFinishTime).toArray(Number[]::new), ColumnFormatter.number(Alignment.CENTER, 15, Precision.TWO))
                 .addColumn("Process_Time", list.stream().map(Cloudlet::getActualCPUTime).toArray(Number[]::new), ColumnFormatter.number(Alignment.CENTER, 15, Precision.TWO))
-//                .addColumn("Process_Time_Check", list.stream().map(job -> job.getActualCPUTime() - job.getCloudletLength() / job.getFv().getMips()).toArray(Number[]::new), ColumnFormatter.number(Alignment.CENTER, 20, Precision.TWO))
+                .addColumn("Process_Time_Check", list.stream().map(job -> job.getActualCPUTime() - job.getCloudletLength() / job.getFv().getMips()).toArray(Number[]::new), ColumnFormatter.number(Alignment.CENTER, 20, Precision.TWO))
                 .addColumn("Elec_Cost", list.stream().map(Job::getElecCost).toArray(Number[]::new), ColumnFormatter.number(Alignment.CENTER, 15, Precision.TWO))
-//                .addColumn("Elec_Cost_Check", list.stream().map(job -> {
-//                    WorkflowDatacenter dc = (WorkflowDatacenter) job.getFv().getVm().getDatacenter();
-//                    return ExperimentUtil.calculateElecCost(dc.getElecPrice(), job.getExecStartTime(), job.getExecFinishTime(), job.getFv().getPower()) - job.getElecCost();
-//                }).toArray(Number[]::new), ColumnFormatter.number(Alignment.CENTER, 20, Precision.TWO))
+                .addColumn("Elec_Cost_Check", list.stream().map(job -> {
+                    WorkflowDatacenter dc = (WorkflowDatacenter) job.getFv().getVm().getDatacenter();
+                    return ExperimentUtil.calculateElecCost(dc.getElecPrice(), job.getExecStartTime(), job.getExecFinishTime(), job.getFv().getPower()) - job.getElecCost();
+                }).toArray(Number[]::new), ColumnFormatter.number(Alignment.CENTER, 20, Precision.TWO))
                 .addColumn("Retry_Count", list.stream().map(Job::getRetryCount).toArray(Number[]::new), ColumnFormatter.number(Alignment.CENTER, 15, Precision.ZERO))
-//                .addColumn("Count", list.stream().map(Job::getCount).toArray(Number[]::new), ColumnFormatter.number(Alignment.CENTER, 10, Precision.ZERO))
+                .addColumn("Count", list.stream().map(Job::getCount).toArray(Number[]::new), ColumnFormatter.number(Alignment.CENTER, 10, Precision.ZERO))
                 .addColumn("Depth", list.stream().map(Job::getDepth).toArray(Number[]::new), ColumnFormatter.number(Alignment.CENTER, 5, Precision.ZERO));
         Table table = builder.build();
         List<Integer> dcIds = list.stream().map(Cloudlet::getResourceId).distinct().toList();
