@@ -82,11 +82,11 @@ public class SimStarter {
         if (broker.getCloudletReceivedList().isEmpty()) {
             throw new IllegalStateException("No cloudlet received");
         }
+        setResult(broker);
         ExperimentUtil.printSimResult(broker.getCloudletReceivedList(), planner.toString());
         if (ENABLE_SIM_DATA) {
             ExperimentUtil.generateSimData(broker.getCloudletReceivedList(), experimentName + "_" + simIdx + "_" + planner);
         }
-        setResult(broker);
     }
 
     private void setResult(WorkflowBroker broker) {
