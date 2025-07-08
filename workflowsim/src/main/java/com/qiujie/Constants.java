@@ -2,11 +2,16 @@ package com.qiujie;
 
 import ch.qos.logback.classic.Level;
 import com.qiujie.comparator.*;
+import com.qiujie.config.HostConfig;
+import com.qiujie.config.VmConfig;
 import com.qiujie.enums.JobSequenceStrategyEnum;
 import generator.app.*;
 
 import java.io.File;
 import java.util.List;
+
+import static com.qiujie.util.ExperimentUtil.readHostConfig;
+import static com.qiujie.util.ExperimentUtil.readVmConfig;
 
 public class Constants {
 
@@ -59,12 +64,13 @@ public class Constants {
     public static final double COST_PER_STORAGE = 0.001; // the cost of using storage in this resource
     public static final double COST_PER_BW = 0.1; // the cost of using bw in this resource
 
+    public static final List<HostConfig> HOST_CONFIG_LIST = readHostConfig();
     public static final int HOST_RAM = 4096; // MEGA
     public static final long HOST_BW = 10000;
     public static final long HOST_STORAGE = 1000000; // MEGA
 
+    public static final List<VmConfig> VM_CONFIG_LIST = readVmConfig();
     public static int VMS = 200;
-
     public static final int VM_RAM = 512; // MEGA
     public static final long VM_BW = 1000;
     public static final long VM_SIZE = 10000; // image size (Megabyte)
