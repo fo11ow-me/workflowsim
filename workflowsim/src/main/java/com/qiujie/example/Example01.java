@@ -25,7 +25,7 @@ import static com.qiujie.Constants.*;
 /**
  * @author QIUJIE
  * <p>
- * schedule a workflow to mutil datacenters
+ * schedule a workflow
  */
 public class Example01 {
     public static void main(String[] args) throws Exception {
@@ -34,6 +34,7 @@ public class Example01 {
         org.cloudbus.cloudsim.Log.disable();
         CloudSim.init(USERS, Calendar.getInstance(), TRACE_FLAG, MIN_TIME_BETWEEN_EVENTS);
         Log.setLevel(Level.TRACE);
+        VMS = 25;
         String dax = "Montage_50";
         // basic parameters
         ContinuousDistribution random = new UniformDistr(0, 1, send);
