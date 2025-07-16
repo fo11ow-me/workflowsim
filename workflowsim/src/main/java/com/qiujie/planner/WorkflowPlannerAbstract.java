@@ -202,10 +202,6 @@ public abstract class WorkflowPlannerAbstract {
                                   double performance,
                                   double power) {
 
-        final double α = 110.0;
-        final double β = 0.9;
-        final double γ = 1.2;
-
         // 1. Calculate Performance per Watt (PpW)
         double ppw = performance / power;
         // 2. Compute the exponent for sigmoid

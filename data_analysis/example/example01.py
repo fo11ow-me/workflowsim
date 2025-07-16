@@ -10,7 +10,7 @@ class Main(unittest.TestCase):
     def test_two_way_anova(self):
         """Test two-way ANOVA with jobSequenceStrategy and neighborhoodFactor"""
         anova(
-            json_path=self.base_path + "Example06.json",
+            json_path=self.base_path + "Example06.jsonl",
             target_variable="elecCost",
             group_variables=["workflowComparator", "ascending"],
             output_dir=self.output_dir
