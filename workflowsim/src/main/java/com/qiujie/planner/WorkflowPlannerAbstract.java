@@ -224,48 +224,12 @@ public abstract class WorkflowPlannerAbstract {
 
     /**
      * calculate predicted execution time and reliability
-     *
-     * @param workflow
      */
-//    protected void calculateExecutionTimeAndReliability(Workflow workflow) {
-//        // get unique vm types
-//        List<Vm> vmList = getVmList().stream()
-//                .collect(Collectors.toMap(
-//                        vm -> ((DvfsVm) vm).getType(),
-//                        Function.identity(),
-//                        (existing, replacement) -> existing
-//                ))
-//                .values()
-//                .stream()
-//                .toList();
-//
-//        double maxReliability = 1;
-//        double maxSubReliability;
-//        execTimeMap = new HashMap<>();
-//        reliabilityMap = new HashMap<>();
-//        for (Job job : workflow.getJobList()) {
-//            execTimeMap.put(job, new HashMap<>());
-//            reliabilityMap.put(job, new HashMap<>());
-//            maxSubReliability = 0;
-//            for (Vm vm : vmList) {
-//                DvfsVm dvfsVm = (DvfsVm) vm;
-//                for (Fv fv : dvfsVm.getFvList()) {
-//                    double executionTime = job.getLength() / fv.getMips();
-//                    execTimeMap.get(job).put(fv, executionTime);
-//                    double reliability = ExperimentUtil.calculateReliability(fv.getLambda(), executionTime); // smaller frequency, smaller reliability
-//                    reliabilityMap.get(job).put(fv, reliability);
-//                    maxSubReliability = Math.max(maxSubReliability, reliability);
-//                }
-//            }
-//            maxReliability *= maxSubReliability; // To maximize reliability, you need to select the Fv with the smallest value of lambda/mips.
-//        }
-//        workflow.setReliGoal(Math.pow(getParameter().getReliabilityFactor(), workflow.getJobNum()) * maxReliability);
-//    }
     protected void calculateExecutionTimeAndReliability(Workflow workflow) {
         // Get unique types of VMs, retaining only one instance for each type
         List<Vm> vmList = getVmList().stream()
                 .collect(Collectors.toMap(
-                        vm -> ((DvfsVm) vm).getType(),  // Use VM type as the key
+                        vm -> ((DvfsVm) vm).getCpu(),  // Use VM cpu as the key
                         Function.identity(),            // Use the VM instance as the value
                         (existing, replacement) -> existing // Keep the first VM if duplicate types exist
                 ))

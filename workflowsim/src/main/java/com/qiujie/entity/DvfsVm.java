@@ -22,7 +22,6 @@ import org.cloudbus.cloudsim.Vm;
 
 import java.util.List;
 import java.util.Objects;
-import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * a vm of  supporting dvfs
@@ -34,7 +33,7 @@ public class DvfsVm extends Vm {
 
     private double frequency;
 
-    private String type;
+    private String cpu;
 
     private List<Fv> fvList;
 

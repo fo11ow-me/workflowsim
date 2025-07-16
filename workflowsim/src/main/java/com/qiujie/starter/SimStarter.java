@@ -35,7 +35,7 @@ public class SimStarter {
     @Getter
     private Result result;
 
-    public SimStarter(int simIdx, String experimentName, SimParameter simParameter) throws Exception {
+    private SimStarter(int simIdx, String experimentName, SimParameter simParameter) throws Exception {
         this.simIdx = simIdx;
         this.experimentName = experimentName;
         this.simParameter = simParameter;

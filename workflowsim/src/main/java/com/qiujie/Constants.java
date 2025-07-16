@@ -2,16 +2,14 @@ package com.qiujie;
 
 import ch.qos.logback.classic.Level;
 import com.qiujie.comparator.*;
-import com.qiujie.config.HostConfig;
-import com.qiujie.config.VmConfig;
+import com.qiujie.entity.Cpu;
 import com.qiujie.enums.JobSequenceStrategyEnum;
 import generator.app.*;
 
 import java.io.File;
 import java.util.List;
 
-import static com.qiujie.util.ExperimentUtil.readHostConfig;
-import static com.qiujie.util.ExperimentUtil.readVmConfig;
+import static com.qiujie.util.ExperimentUtil.getCpuList;
 
 public class Constants {
 
@@ -64,12 +62,14 @@ public class Constants {
     public static final double COST_PER_STORAGE = 0.001; // the cost of using storage in this resource
     public static final double COST_PER_BW = 0.1; // the cost of using bw in this resource
 
-    public static final List<HostConfig> HOST_CONFIG_LIST = readHostConfig();
+    public static final int HOST_PES = 2;
+    public static final double HOST_MIPS = 2000;
     public static final int HOST_RAM = 4096; // MEGA
     public static final long HOST_BW = 10000;
     public static final long HOST_STORAGE = 1000000; // MEGA
 
-    public static final List<VmConfig> VM_CONFIG_LIST = readVmConfig();
+    public static final List<Cpu> CPU_LIST = getCpuList();
+
     public static int VMS = 200;
     public static final int VM_RAM = 512; // MEGA
     public static final long VM_BW = 1000;
@@ -92,7 +92,7 @@ public class Constants {
     public static final List<Class<? extends WorkflowComparatorInterface>> WORKFLOW_COMPARATOR_LIST = List.of(DefaultComparator.class, DepthComparator.class, JobNumComparator.class, LengthComparator.class);
     public static final List<Boolean> ASCENDING_LIST = List.of(true, false);
     public static final List<Double> DEADLINE_FACTOR_LIST = List.of(0.2, 0.4, 0.6, 0.8);
-    public static final List<Double> RELIABILITY_FACTOR_LIST = List.of(0.2, 0.4, 0.6, 0.8);
+    public static final List<Double> RELIABILITY_FACTOR_LIST = List.of(0.8, 0.85, 0.9, 0.95);
     public static final List<JobSequenceStrategyEnum> JOB_SEQUENCE_STRATEGY_LIST = List.of(JobSequenceStrategyEnum.UPWARD_RANK, JobSequenceStrategyEnum.DOWNWARD_RANK, JobSequenceStrategyEnum.DEADLINE);
     public static final List<Double> NEIGHBORHOOD_FACTOR_LIST = List.of(0.2, 0.4, 0.6, 0.8);
 //    public static final List<Double> SLACK_TIME_FACTOR_LIST = List.of(0.2, 0.4, 0.6, 0.8);
