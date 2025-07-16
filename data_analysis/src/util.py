@@ -112,9 +112,9 @@ def save_mean_ci_plot(df, group_var, target_var, path):
     plt.close()
 
 
-def run_anova(json_path=None, data=None, target_variable="elecCost", group_variables=None, output_dir=None,
-              use_rpd=True,
-              best_known=None):
+def anova(json_path=None, data=None, target_variable="elecCost", group_variables=None, output_dir=None,
+          use_rpd=True,
+          best_known=None):
     if not group_variables or len(group_variables) == 0:
         raise ValueError("group_variables must contain at least one variable.")
 
@@ -145,14 +145,14 @@ def run_anova(json_path=None, data=None, target_variable="elecCost", group_varia
         target_variable = 'RPD'  # Update target variable to RPD for all subsequent analysis
         print("✅ Converted target variable to RPD.")
         if len(group_variables) == 1:
-            _run_one_way_anova(df, base_name, target_variable, group_variables[0], output_dir)
+            _one_way_anova(df, base_name, target_variable, group_variables[0], output_dir)
         else:
-            _run_multi_way_anova(df, base_name, target_variable, group_variables, output_dir)
+            _multi_way_anova(df, base_name, target_variable, group_variables, output_dir)
 
 
-def _run_one_way_anova(df, base_name, target_variable, group_var, output_dir):
+def _one_way_anova(df, base_name, target_variable, group_variable, output_dir):
     timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    groups = df.groupby(group_var)[target_variable].apply(list)
+    groups = df.groupby(group_variable)[target_variable].apply(list)
 
     print("\n--- One-Way ANOVA ---")
     for name, values in groups.items():
@@ -170,7 +170,7 @@ def _run_one_way_anova(df, base_name, target_variable, group_var, output_dir):
     print("Conclusion:", conclusion)
 
     print("\n--- Tukey HSD Post-Hoc Test ---")
-    tukey = pairwise_tukeyhsd(endog=df[target_variable], groups=df[group_var], alpha=0.05)
+    tukey = pairwise_tukeyhsd(endog=df[target_variable], groups=df[group_variable], alpha=0.05)
     print(tukey.summary())
 
     tukey_path = os.path.join(output_dir, f"{base_name}_tukey.csv")
@@ -184,7 +184,7 @@ def _run_one_way_anova(df, base_name, target_variable, group_var, output_dir):
         f"Timestamp: {timestamp}\n"
         f"Analysis Type: One-Way ANOVA\n"
         f"Target Variable: {target_variable}\n"
-        f"Grouping Variable: {group_var}\n"
+        f"Grouping Variable: {group_variable}\n"
         f"F-statistic: {f_stat:.4f}\n"
         f"p-value: {p_val:.4f}\n"
         f"Degrees of Freedom: between={df_between}, within={df_within}\n"
@@ -197,17 +197,17 @@ def _run_one_way_anova(df, base_name, target_variable, group_var, output_dir):
     print("✅ Summary (with Tukey) saved to:", summary_path)
 
     # Plot Boxplot
-    plot_path = os.path.join(output_dir, f"{base_name}_boxplot_{group_var}.png")
-    save_plot(df, group_var, target_variable, plot_path)
+    plot_path = os.path.join(output_dir, f"{base_name}_boxplot_{group_variable}.png")
+    save_plot(df, group_variable, target_variable, plot_path)
     print("📈 Boxplot saved to:", plot_path)
 
     # plot Mean + 95% CI Chart
-    mean_ci_path = os.path.join(output_dir, f"{base_name}_mean_ci_{group_var}.png")
-    save_mean_ci_plot(df, group_var, target_variable, mean_ci_path)
+    mean_ci_path = os.path.join(output_dir, f"{base_name}_mean_ci_{group_variable}.png")
+    save_mean_ci_plot(df, group_variable, target_variable, mean_ci_path)
     print(f"📊 Mean and 95% CI plot saved to: {mean_ci_path}")
 
 
-def _run_multi_way_anova(df, base_name, target_variable, group_variables, output_dir):
+def _multi_way_anova(df, base_name, target_variable, group_variables, output_dir):
     timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
     print("\n--- Multi-Way ANOVA ---")
@@ -289,55 +289,54 @@ def sanitize_filename(name):
     return re.sub(r'[\\/*?:"<>| ]', '_', str(name))
 
 
-def plot_rpd_comparison_chart(json_path, x_axis='deadlineFactor', chart_title=None, output_dir=None):
-    # 1. Load JSON data
-    with open(json_path, 'r', encoding='utf-8') as f:
-        raw_data = json.load(f)
+def plot_comparison_chart(json_path, x_axis='deadlineFactor', y_axis='elecCost',
+                          chart_title=None, output_dir=None, use_rpd=True):
+    # 1. Load JSON or JSONL data
+    raw_data = load_json_data(json_path)
 
-    # 2. Convert JSON data to DataFrame
+    # 2. Convert to DataFrame
     df = pd.DataFrame(raw_data)
 
-    # Handle case where x_axis is a list
+    # 3. Handle list-type x_axis
     if df[x_axis].apply(lambda x: isinstance(x, list)).any():
         df[x_axis] = df[x_axis].apply(lambda x: '_'.join(str(i) for i in x))
 
-    # 3. Calculate Relative Percentage Deviation (RPD)
-    best_known = df['elecCost'].min()
-    df['RPD'] = ((df['elecCost'] - best_known) / best_known) * 100
+    # 4. Set y-axis variable (either elecCost or RPD)
+    if use_rpd:
+        best_known = df[y_axis].min()
+        df['RPD'] = ((df[y_axis] - best_known) / best_known) * 100
+        plot_y = 'RPD'
+    else:
+        plot_y = y_axis
 
-    # 4. Clean 'name' field by removing parentheses and extra spaces
+    # 5. Clean algorithm name
     df['name'] = df['name'].apply(lambda x: re.sub(r'\(.*?\)', '', x).strip())
 
-    # 5. Auto-generate chart title and save path
+    # 6. File path & title
     base_name = os.path.splitext(os.path.basename(json_path))[0]
-
-    # Function to sanitize filename by removing illegal characters
     x_axis_name = sanitize_filename(x_axis)
+    y_axis_name = sanitize_filename(plot_y)
 
-    # If no title is provided, create a default title
     if not chart_title:
-        chart_title = f'{base_name}: RPD vs {x_axis}'
+        chart_title = f'{base_name}: {plot_y} vs {x_axis}'
 
-    # If no output directory is specified, use the current directory
     if not output_dir:
-        output_dir = '.'  # Default to current directory
+        output_dir = '.'
 
-    save_file_name = f'{base_name}_{x_axis_name}_comparison_chart.png'
+    save_file_name = f'{base_name}_{x_axis_name}_vs_{y_axis_name}_chart.png'
     save_path = os.path.join(output_dir, save_file_name)
 
-    # 6. Style settings (Recommended style for academic papers)
+    # 7. Plot
     sns.set(style='whitegrid', font='Times New Roman', font_scale=1.2)
     plt.figure(figsize=(10, 6))
-    palette = sns.color_palette('Set2')  # Soft color palette
+    palette = sns.color_palette('Set2')
     markers = ['o', 's', 'D', '^', 'v', 'P', '*', 'X']
-
     hue_count = df['name'].nunique()
 
-    # 7. Plotting with dodge only if there are multiple algorithms
     plot_params = dict(
         data=df,
         x=x_axis,
-        y='RPD',
+        y=plot_y,
         hue='name',
         capsize=0.1,
         err_kws={'linewidth': 1.5},
@@ -346,33 +345,25 @@ def plot_rpd_comparison_chart(json_path, x_axis='deadlineFactor', chart_title=No
         palette=palette,
         linewidth=1.5
     )
-
-    # Only set dodge when there are more than one algorithm
     if hue_count > 1:
         plot_params['dodge'] = 0.3
 
-    # Plot the pointplot with the given parameters
     ax = sns.pointplot(**plot_params)
 
-    # Set title, labels, and font
+    # 8. Customize appearance
     ax.set_title(chart_title, fontsize=16, fontweight='bold', pad=15)
     ax.set_xlabel(x_axis, fontsize=14)
-    ax.set_ylabel('Relative Percentage Deviation (RPD) %', fontsize=14)
+    ylabel = 'Relative Percentage Deviation (RPD) %' if use_rpd else plot_y
+    ax.set_ylabel(ylabel, fontsize=14)
 
-    # Set legend
     if hue_count > 1:
         ax.legend(title='Algorithm', bbox_to_anchor=(1.02, 1), loc='upper left', borderaxespad=0, frameon=False)
     else:
         ax.legend().remove()
 
-    # Set tick label font size
     plt.xticks(fontsize=12)
     plt.yticks(fontsize=12)
-
-    # Set grid lines
     plt.grid(True, linestyle='--', linewidth=0.8, alpha=0.7)
-
-    # Set axis line width
     ax.spines['top'].set_visible(False)
     ax.spines['right'].set_visible(False)
     ax.spines['left'].set_linewidth(1.2)
@@ -382,3 +373,5 @@ def plot_rpd_comparison_chart(json_path, x_axis='deadlineFactor', chart_title=No
     plt.savefig(save_path, dpi=300, bbox_inches='tight')
     print(f"✅ Chart saved to: {save_path}")
     plt.close()
+
+
