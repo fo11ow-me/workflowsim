@@ -19,6 +19,7 @@ import org.cloudbus.cloudsim.distributions.UniformDistr;
 
 import java.lang.reflect.Constructor;
 import java.util.*;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.qiujie.Constants.*;
 
@@ -48,8 +49,10 @@ public class SimStarter {
         start();
     }
 
+    private static final AtomicInteger uid = new AtomicInteger(-1);
+
     public SimStarter(SimParameter simParameter) throws Exception {
-        this(0, "", simParameter);
+        this(uid.getAndDecrement(), "", simParameter);
     }
 
     public void start() throws Exception {
