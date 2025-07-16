@@ -1,0 +1,67 @@
+[
+  {
+    "name": "AMD Turion 64 ML-40",
+    "pes": 1,
+    "mips": 1100,
+    "frequency": 2.2,
+    "freq2PowerList": [
+      { "frequency": 0.8, "power": 14 },
+      { "frequency": 1.2, "power": 21 },
+      { "frequency": 1.6, "power": 30 },
+      { "frequency": 1.9, "power": 33 },
+      { "frequency": 2.2, "power": 35 }
+    ]
+  },
+  {
+    "name": "AMD Athlon 64 3700+",
+    "pes": 1,
+    "mips": 1150,
+    "frequency": 2.2,
+    "freq2PowerList": [
+      { "frequency": 0.8, "power": 16 },
+      { "frequency": 1.2, "power": 24 },
+      { "frequency": 1.6, "power": 35 },
+      { "frequency": 2.0, "power": 46 },
+      { "frequency": 2.2, "power": 60 }
+    ]
+  },
+  {
+    "name": "AMD Athlon 64 4000+",
+    "pes": 1,
+    "mips": 1200,
+    "frequency": 2.4,
+    "freq2PowerList": [
+      { "frequency": 0.8, "power": 16 },
+      { "frequency": 1.2, "power": 25 },
+      { "frequency": 1.8, "power": 37 },
+      { "frequency": 2.0, "power": 45 },
+      { "frequency": 2.4, "power": 58 }
+    ]
+  },
+  {
+    "name": "AMD Turion 64 MT-40",
+    "pes": 1,
+    "mips": 1050,
+    "frequency": 2.2,
+    "freq2PowerList": [
+      { "frequency": 0.8, "power": 12 },
+      { "frequency": 1.2, "power": 18 },
+      { "frequency": 1.6, "power": 21 },
+      { "frequency": 1.9, "power": 22 },
+      { "frequency": 2.2, "power": 25 }
+    ]
+  },
+  {
+    "name": "AMD Sempron 3500+",
+    "pes": 1,
+    "mips": 1000,
+    "frequency": 2.0,
+    "freq2PowerList": [
+      { "frequency": 0.8, "power": 13 },
+      { "frequency": 1.1, "power": 20 },
+      { "frequency": 1.4, "power": 28 },
+      { "frequency": 1.7, "power": 36 },
+      { "frequency": 2.0, "power": 44 }
+    ]
+  }
+]
