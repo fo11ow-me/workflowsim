@@ -1,4 +1,4 @@
-package com.qiujie.config;
+package com.qiujie.entity;
 
 import lombok.Data;
 

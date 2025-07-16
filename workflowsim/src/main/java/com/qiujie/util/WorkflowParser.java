@@ -31,7 +31,7 @@ public class WorkflowParser {
         // parse using builder to get DOM representation of the XML file
         java.io.File daxFile = new java.io.File(DAX_DIR + dax + ".xml");
         if (!daxFile.exists()) {
-            throw new RuntimeException("Warning: dax " + daxFile.getAbsolutePath() + " not exist");
+            throw new IllegalStateException("DAX file not found: " + daxFile.getAbsolutePath());
         }
         Document dom;
         try {
@@ -49,21 +49,18 @@ public class WorkflowParser {
                     Job job = new Job(dax + "_" + id, (long) runtime);
                     for (Element fileNode : node.getChildren()) {
                         if (fileNode.getName().equalsIgnoreCase("uses")) {
-                            String fileName = fileNode.getAttributeValue("name"); // DAX version 3.3
-                            if (fileName == null) {
-                                fileName = fileNode.getAttributeValue("file"); // DAX version 3.0
-                            }
-                            if (fileName == null) {
-                                log.error("File name not found");
+                            String file = fileNode.getAttributeValue("file");
+                            if (file == null) {
+                                throw new IllegalStateException("File name not found");
                             }
                             String link = fileNode.getAttributeValue("link");
                             double size = Math.max(Double.parseDouble(fileNode.getAttributeValue("size")), 0);
                             switch (link) {
                                 case "input":
-                                    job.getPredInputFileList().add(new File(fileName, size));
+                                    job.getPredInputFileList().add(new File(file, size));
                                     break;
                                 case "output":
-                                    job.getOutputFileList().add(new File(fileName, size));
+                                    job.getOutputFileList().add(new File(file, size));
                                     break;
                                 default:
                                     log.warn("Cannot identify file type");
