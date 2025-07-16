@@ -11,6 +11,7 @@ import com.qiujie.planner.HEFTPlanner;
 import com.qiujie.util.ExperimentUtil;
 import com.qiujie.util.Log;
 import com.qiujie.util.WorkflowParser;
+import org.cloudbus.cloudsim.Datacenter;
 import org.cloudbus.cloudsim.Vm;
 import org.cloudbus.cloudsim.core.CloudSim;
 import org.cloudbus.cloudsim.distributions.ContinuousDistribution;
@@ -31,29 +32,20 @@ public class Example02 {
         ContinuousDistribution random = new UniformDistr(0, 1, send);
         ClockModifier.modifyClockMethod();
         org.cloudbus.cloudsim.Log.disable();
-        CloudSim.init(USERS, Calendar.getInstance(), TRACE_FLAG,MIN_TIME_BETWEEN_EVENTS);
+        CloudSim.init(USERS, Calendar.getInstance(), TRACE_FLAG, MIN_TIME_BETWEEN_EVENTS);
         Log.setLevel(Level.INFO);
         List<String> daxList = List.of(
-                "Inspiral_1000",
-                "Inspiral_100",
-                "Inspiral_50",
-//                "Epigenomics_997",
-                "Sipht_30",
-//                "Montage_1000",
-//                "CyberShake_100",
-//                "CyberShake_30",
-//                "Epigenomics_46",
-                "Epigenomics_24",
+                "Genome_50",
+                "Genome_200",
                 "Montage_100",
-//                "Montage_1000",
                 "Montage_50"
         );
         // create datacenters
-        ExperimentUtil.createDatacenters();
+        List<Datacenter> datacenterList = ExperimentUtil.createDatacenters();
         // create broker
-        WorkflowBroker broker = new WorkflowBroker(random , new HEFTPlanner(random,new Parameter()));
+        WorkflowBroker broker = new WorkflowBroker(random, new HEFTPlanner(random, new Parameter()));
         // submit vms
-        List<Vm> vmList = ExperimentUtil.createVms(random,broker.getId());
+        List<Vm> vmList = ExperimentUtil.createVms(random, broker.getId());
         broker.submitGuestList(vmList);
         // submit workflows
         List<Workflow> workflowList = daxList.stream().map(WorkflowParser::parse).toList();

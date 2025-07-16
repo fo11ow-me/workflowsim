@@ -36,14 +36,8 @@ public class Example06 extends ExperimentStarter {
     protected void addParams() {
         setLevel(Level.WARN);
         List<String> daxList = List.of(
-                "CyberShake_25"
-                , "CyberShake_50"
-                , "CyberShake_100"
-                , "CyberShake_200"
-                , "Montage_25"
+                "Genome_100"
                 , "Montage_50"
-                , "Montage_100"
-                , "Montage_400"
         );
         for (Class<? extends WorkflowComparatorInterface> workflowComparator : Constants.WORKFLOW_COMPARATOR_LIST) {
             for (Boolean ascending : Constants.ASCENDING_LIST) {

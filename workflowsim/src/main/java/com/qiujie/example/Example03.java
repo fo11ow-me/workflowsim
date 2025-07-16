@@ -35,34 +35,14 @@ public class Example03 {
         CloudSim.init(2, Calendar.getInstance(), TRACE_FLAG,MIN_TIME_BETWEEN_EVENTS);
         Log.setLevel(Level.TRACE);
         List<String> daxList = List.of(
-//                "Inspiral_1000",
-//                "Inspiral_100",
-                "Inspiral_50",
-//                "Epigenomics_997",
-                "Sipht_30",
-//                "Montage_1000",
-//                "CyberShake_100",
-//                "CyberShake_30",
-//                "Epigenomics_46",
-//                "Epigenomics_24",
                 "Montage_100",
-//                "Montage_1000",
+                "Genome_200",
                 "Montage_50"
         );
 
         List<String> daxList1 = List.of(
-//                "Inspiral_1000",
-//                "Inspiral_100",
-                "Inspiral_50",
-//                "Epigenomics_997",
-                "Sipht_30",
-//                "Montage_1000",
-//                "CyberShake_100",
-//                "CyberShake_30",
-//                "Epigenomics_46",
-//                "Epigenomics_24",
                 "Montage_100",
-//                "Montage_1000",
+                "Genome_200",
                 "Montage_50"
         );
 
