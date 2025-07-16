@@ -87,6 +87,7 @@ public class Constants {
     public static List<Class<? extends Application>> APP_LIST = List.of(Montage.class, Genome.class);
     public static List<Integer> JOB_NUM_LIST = List.of(50, 100, 200, 400);
     public static int INSTANCE_NUM = 5;
+    public static final int REPEAT_TIMES = 5;
 
     //  List of parameter ranges
     public static final List<Class<? extends WorkflowComparatorInterface>> WORKFLOW_COMPARATOR_LIST = List.of(DefaultComparator.class, DepthComparator.class, JobNumComparator.class, LengthComparator.class);
@@ -106,13 +107,14 @@ public class Constants {
     public static double NEIGHBORHOOD_FACTOR = NEIGHBORHOOD_FACTOR_LIST.getFirst();
     public static double SLACK_TIME_FACTOR = 1;
 
-    public static final double ε = 1e-6;
-
     public static final int MAX_RETRY_COUNT = 10;
 
     public static final boolean ENABLE_DVFS = false;
-
     public static final boolean ENABLE_SIM_DATA = false;
 
-    public static final int REPEAT_TIMES = 5;
+    public static final double α = 110.0;
+    public static final double β = 0.9;
+    public static final double γ = 1.2;
+    public static final double ε = 1e-6;
+
 }
