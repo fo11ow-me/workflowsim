@@ -20,9 +20,9 @@
 
 - Supports printing of both simulation and experimental results to the console
 
-![](./assets/README-1752635713331.png)
+![](./assets/README-1752649243930.png)
 
-![](./assets/README-1752635822606.png)
+![](./assets/README-1752649359550.png)
 
 - Support multi-factor ANOVA
 - Support parallel simulation
