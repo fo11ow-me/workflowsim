@@ -10,6 +10,7 @@ import org.cloudbus.cloudsim.Vm;
 import org.cloudbus.cloudsim.core.CloudSim;
 import org.cloudbus.cloudsim.distributions.ContinuousDistribution;
 
+import java.lang.reflect.Constructor;
 import java.util.*;
 
 
@@ -24,15 +25,15 @@ public class RandomPlanner extends WorkflowPlannerAbstract {
     private Map<Job, Double> eftMap;
     private Map<Job, Double> upwardRankMap;
 
-    public RandomPlanner(ContinuousDistribution random, Parameter parameter) {
-        super(random, parameter);
+    public RandomPlanner(ContinuousDistribution random, Param param) {
+        super(random, param);
     }
 
     public void init() throws Exception {
-        Class<? extends WorkflowComparatorInterface> clazz =
-                (Class<? extends WorkflowComparatorInterface>) Class.forName(getParameter().getWorkflowComparator());
-        WorkflowComparatorInterface comparatorInterface = clazz.getDeclaredConstructor().newInstance();
-        Comparator<Workflow> workflowComparator = comparatorInterface.get(getParameter().isAscending());
+        Class<?> clazz = Class.forName(getParam().getWorkflowComparator());
+        Constructor<?> constructor = clazz.getDeclaredConstructor();
+        WorkflowComparatorInterface comparatorInterface =(WorkflowComparatorInterface) constructor.newInstance();
+        Comparator<Workflow> workflowComparator = comparatorInterface.get(getParam().isAscending());
         getWorkflowList().sort(workflowComparator);
     }
 
@@ -86,10 +87,6 @@ public class RandomPlanner extends WorkflowPlannerAbstract {
         for (Job job : list) {
             double max = 0.0;
             for (Job child : job.getChildList()) {
-                // check whether the upward rank of child job has been calculated
-                if (!upwardRankMap.containsKey(child)) {
-                    throw new IllegalStateException(String.format("Child job #%d upward rank has not been calculated!", child.getCloudletId()));
-                }
                 double temp = upwardRankMap.get(child) + avgPredecessorDataTransferTimeMap.get(child).get(job);
                 max = Math.max(max, temp);
             }
@@ -106,7 +103,7 @@ public class RandomPlanner extends WorkflowPlannerAbstract {
         Map<Job, Map<Job, Double>> avgPredecessorDataTransferTimeMap = calculateAvgPredecessorDataTransferTime(workflow);
         double mips = getVmList().stream().mapToDouble(Vm::getMips).average().getAsDouble();
         double upwardRank = calculateUpwardRank(avgLocalDataTransferTimeMap, avgPredecessorDataTransferTimeMap, mips, workflow);
-        double slackTime = upwardRank * getParameter().getDeadlineFactor();
+        double slackTime = upwardRank * getParam().getDeadlineFactor();
         workflow.setDeadline(getFinishTime() + upwardRank + slackTime);
 
     }
@@ -134,9 +131,6 @@ public class RandomPlanner extends WorkflowPlannerAbstract {
                 reliability *= reliabilityMap.get(job).get(solution.getResult().get(job));
                 finishTime = Math.max(finishTime, eftMap.get(job));
             }
-        }
-        if (isNotTopologicalOrder(scheduleSequence)) {
-            throw new IllegalStateException("Not a topological order!");
         }
         solution.setSequence(scheduleSequence);
         solution.setElecCost(elecCost);
@@ -167,9 +161,6 @@ public class RandomPlanner extends WorkflowPlannerAbstract {
         DvfsVm dvfsVm = (DvfsVm) vm;
         double max = 0;
         for (Job parent : job.getParentList()) {
-            if (!eftMap.containsKey(parent)) {
-                throw new IllegalStateException(String.format("Parent job #%d eft has not been calculated!", parent.getCloudletId()));
-            }
             max = Math.max(max, eftMap.get(parent) + ExperimentUtil.calculatePredecessorDataTransferTime(job, (Host) dvfsVm.getHost(), parent, (Host) solution.getResult().get(parent).getVm().getHost()));
         }
         double readyTime = max + localDataTransferTimeMap.get(job).get(dvfsVm);
