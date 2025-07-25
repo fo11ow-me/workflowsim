@@ -14,7 +14,7 @@ import static com.qiujie.Constants.*;
 @Getter
 @Accessors(chain = true)
 @NoArgsConstructor
-public class Parameter {
+public class Param {
     // Default parameter values from Constants
     private String workflowComparator = WORKFLOW_COMPARATOR.getName();
     private boolean ascending = ASCENDING;
@@ -29,11 +29,11 @@ public class Parameter {
      * It is a regular method (not a standard JavaBean setter), and Hutool's deserialization mechanism only calls standard JavaBean-style setters like `setXxx(String)`, or it directly sets the field via reflection.
      *
      */
-    public Parameter setWorkflowComparator(Class<? extends WorkflowComparatorInterface> workflowComparator) {
+    public Param setWorkflowComparator(Class<? extends WorkflowComparatorInterface> workflowComparator) {
         return setWorkflowComparator(workflowComparator.getName());
     }
 
-    public Parameter setWorkflowComparator(String workflowComparator) {
+    public Param setWorkflowComparator(String workflowComparator) {
         this.workflowComparator = workflowComparator;
         return this;
     }
