@@ -65,9 +65,6 @@ public class Job extends Cloudlet {
         this.predInputFileList = new ArrayList<>();
         this.localInputFileList = new ArrayList<>();
         this.outputFileList = new ArrayList<>();
-
-
-        this.count = 0;
     }
 
     public void updateRetryCount() {
@@ -76,14 +73,6 @@ public class Job extends Cloudlet {
 
     public void updateElecCost(double elecCost) {
         this.elecCost += elecCost;
-    }
-
-    private int count;
-
-    @Override
-    public boolean updateCloudlet(Object info) {
-        count++;
-        return true;
     }
 
     public boolean canRetry() {

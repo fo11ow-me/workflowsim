@@ -26,7 +26,7 @@ public abstract class WorkflowPlannerAbstract {
     private final ContinuousDistribution random;
 
     @Getter
-    private final Parameter parameter;
+    private final Param param;
 
     @NonNull
     @Setter
@@ -59,9 +59,9 @@ public abstract class WorkflowPlannerAbstract {
     private double runtime;
 
 
-    public WorkflowPlannerAbstract(ContinuousDistribution random, Parameter parameter) {
+    public WorkflowPlannerAbstract(ContinuousDistribution random, Param param) {
         this.random = random;
-        this.parameter = parameter;
+        this.param = param;
         sequence = new ArrayList<>();
         execWindowMap = new HashMap<>();
         elecCost = 0;
@@ -148,16 +148,7 @@ public abstract class WorkflowPlannerAbstract {
         }
         if (occupySlot) {
             double startTime = eft - execTime;
-            execWindows.add(insertPos, new ExecWindow(startTime, eft, job));
-            if (readyTime - startTime > ε) {
-                throw new IllegalStateException(String.format("Job #%d (insertPos %d): startTime %f is less than readyTime %f", job.getCloudletId(), insertPos, startTime, readyTime));
-            }
-            if (insertPos > 0) {
-                ExecWindow lastWindow = execWindows.get(insertPos - 1);
-                if (lastWindow.getFinishTime() - startTime > ε) {
-                    throw new IllegalStateException(String.format("Time window overlap detected when inserting [%s - %s] into VM[%s] with existing [%s - %s] (Job %s)", startTime, eft, fv.getVm().getId(), lastWindow.getStartTime(), lastWindow.getFinishTime(), lastWindow.getJob().getCloudletId()));
-                }
-            }
+            execWindows.add(insertPos, new ExecWindow(startTime, eft));
         }
         return eft;
     }
@@ -282,12 +273,12 @@ public abstract class WorkflowPlannerAbstract {
         // Set the workflow's reliability goal:
         // Apply the reliability factor (raised to the power of task count) as a weight
         // Multiply by the smoothed reliability to balance precision and stability
-        workflow.setReliGoal(Math.pow(getParameter().getReliabilityFactor(), jobNum) * smoothReliability);
+        workflow.setReliGoal(Math.pow(getParam().getReliabilityFactor(), jobNum) * smoothReliability);
     }
 
 
     protected List<Job> constructInitialJobSequence(Workflow workflow) {
-        JobSequenceStrategyEnum jobSequenceStrategy = getParameter().getJobSequenceStrategy();
+        JobSequenceStrategyEnum jobSequenceStrategy = getParam().getJobSequenceStrategy();
         List<Job> initialSequence;
         if (jobSequenceStrategy == JobSequenceStrategyEnum.DEPTH) {
             initialSequence = workflow.getJobList().stream().sorted(Comparator.comparingDouble(Job::getDepth)).toList();
@@ -303,6 +294,6 @@ public abstract class WorkflowPlannerAbstract {
 
     @Override
     public String toString() {
-        return ExperimentUtil.getPrefixFromClassName(getClass().getName()) + parameter;
+        return ExperimentUtil.getPrefixFromClassName(getClass().getName()) + param;
     }
 }

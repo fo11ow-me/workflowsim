@@ -4,7 +4,7 @@ import ch.qos.logback.classic.Level;
 import cn.hutool.core.io.FileUtil;
 import cn.hutool.json.JSONUtil;
 import com.qiujie.entity.Result;
-import com.qiujie.entity.SimParameter;
+import com.qiujie.entity.SimParam;
 import lombok.AccessLevel;
 import lombok.Setter;
 import org.slf4j.Logger;
@@ -27,7 +27,7 @@ public abstract class ExperimentStarter {
     private final Logger log;
     @Setter(AccessLevel.PROTECTED)
     private Level level;
-    private final List<SimParameter> paramList;
+    private final List<SimParam> paramList;
     private static final Result POISON_PILL = new Result(); // End marker for queue
 
     public ExperimentStarter() {
@@ -63,8 +63,8 @@ public abstract class ExperimentStarter {
 
     protected abstract void addParams();
 
-    protected void addParam(SimParameter simParameter) {
-        paramList.add(simParameter);
+    protected void addParam(SimParam simParam) {
+        paramList.add(simParam);
     }
 
 

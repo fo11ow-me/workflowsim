@@ -31,7 +31,7 @@ public class WorkflowGenerator {
         for (Class<? extends Application> clazz : APP_LIST) {
             for (Integer jobNum : JOB_NUM_LIST) {
                 Application app = clazz.getDeclaredConstructor().newInstance();
-                RunAll.run(app, new File(dir.getAbsolutePath() + "\\" + app.getClass().getSimpleName() + "_" + jobNum + ".xml"), "-n", jobNum + "", "-f");
+                RunAll.run(app, new File(dir.getAbsolutePath() + "\\" + app.getClass().getSimpleName() + "_" + jobNum + ".xml"), "-n", jobNum + "");
             }
         }
     }
