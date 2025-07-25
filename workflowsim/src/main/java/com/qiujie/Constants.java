@@ -76,7 +76,7 @@ public class Constants {
     public static final long VM_SIZE = 10000; // image size (Megabyte)
 
     // Transient failure rate of the virtual machine at maximum operating frequency
-    public static final double λ = 1e-6;
+    public static double λ = 1e-5;
     // Measures the sensitivity of transient fault rate to frequency scaling
     public static final int SR = 2;
 
@@ -93,8 +93,8 @@ public class Constants {
     public static final List<Class<? extends WorkflowComparatorInterface>> WORKFLOW_COMPARATOR_LIST = List.of(DefaultComparator.class, DepthComparator.class, JobNumComparator.class, LengthComparator.class);
     public static final List<Boolean> ASCENDING_LIST = List.of(true, false);
     public static final List<Double> DEADLINE_FACTOR_LIST = List.of(0.2, 0.4, 0.6, 0.8);
-    public static final List<Double> RELIABILITY_FACTOR_LIST = List.of(0.8, 0.85, 0.9, 0.95);
-    public static final List<JobSequenceStrategyEnum> JOB_SEQUENCE_STRATEGY_LIST = List.of(JobSequenceStrategyEnum.UPWARD_RANK, JobSequenceStrategyEnum.DOWNWARD_RANK, JobSequenceStrategyEnum.DEADLINE);
+    public static final List<Double> RELIABILITY_FACTOR_LIST = List.of(0.92, 0.94, 0.96, 0.98);
+    public static final List<JobSequenceStrategyEnum> JOB_SEQUENCE_STRATEGY_LIST = List.of(JobSequenceStrategyEnum.DEADLINE, JobSequenceStrategyEnum.UPWARD_RANK, JobSequenceStrategyEnum.DOWNWARD_RANK);
     public static final List<Double> NEIGHBORHOOD_FACTOR_LIST = List.of(0.2, 0.4, 0.6, 0.8);
 //    public static final List<Double> SLACK_TIME_FACTOR_LIST = List.of(0.2, 0.4, 0.6, 0.8);
 
@@ -107,7 +107,7 @@ public class Constants {
     public static double NEIGHBORHOOD_FACTOR = NEIGHBORHOOD_FACTOR_LIST.getFirst();
     public static double SLACK_TIME_FACTOR = 1;
 
-    public static final int MAX_RETRY_COUNT = 10;
+    public static final int MAX_RETRY_COUNT = Integer.MAX_VALUE;
 
     public static final boolean ENABLE_DVFS = false;
     public static final boolean ENABLE_SIM_DATA = false;
@@ -115,6 +115,5 @@ public class Constants {
     public static final double α = 110.0;
     public static final double β = 0.9;
     public static final double γ = 1.2;
-    public static final double ε = 1e-6;
 
 }
