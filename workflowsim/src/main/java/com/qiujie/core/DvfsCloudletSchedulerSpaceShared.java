@@ -35,9 +35,6 @@ public class DvfsCloudletSchedulerSpaceShared extends CloudletSchedulerSpaceShar
 
         // Update cloudlets in exec list
         for (Cloudlet cl : getCloudletExecList()) {
-
-            cl.updateCloudlet(null);
-
             Job job = (Job) cl;
             WorkflowDatacenter dc = (WorkflowDatacenter) job.getFv().getVm().getDatacenter();
             job.updateElecCost(ExperimentUtil.calculateElecCost(dc.getElecPrice(), getPreviousTime(), currentTime, job.getFv().getPower()));
@@ -54,11 +51,16 @@ public class DvfsCloudletSchedulerSpaceShared extends CloudletSchedulerSpaceShar
             if (random.sample() < 1 - reliability && job.canRetry()) {
                 job.setCloudletLength(job.getCloudletFinishedSoFar() / Consts.MILLION + job.getLength());
                 job.updateRetryCount();
-                log.warn("{}: Retry {} for Job #{} {}", CloudSim.clock(), job.getRetryCount(), job.getCloudletId(), job.getName());
+                log.warn("{}: Retrying {} for Job #{} {}", CloudSim.clock(), job.getRetryCount(), job.getCloudletId(), job.getName());
                 if (ENABLE_DVFS) {
-                    DvfsVm vm = (DvfsVm) job.getFv().getVm();
+                    Fv fv = job.getFv();
+                    DvfsVm vm = (DvfsVm) fv.getVm();
                     int index = Math.max(vm.getFvList().indexOf(job.getFv()) - 1, 0);
-                    job.setFv(vm.getFvList().get(index));
+                    Fv newFv = vm.getFvList().get(index);
+                    job.setFv(newFv);
+                    if (!fv.equals(newFv)) {
+                        log.warn("{}: Adjusting Fv of {} #{} from L{} to L{} for Job #{} {}", CloudSim.clock(), vm.getClassName(), vm.getId(), fv.getLevel(), newFv.getLevel(), job.getCloudletId(), job.getName());
+                    }
                 }
             }
         }
