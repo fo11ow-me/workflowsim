@@ -3,7 +3,6 @@ package com.qiujie.core;
 
 import com.qiujie.entity.File;
 import com.qiujie.entity.Job;
-import com.qiujie.entity.Parameter;
 import com.qiujie.entity.Workflow;
 import com.qiujie.planner.WorkflowPlannerAbstract;
 import com.qiujie.util.ExperimentUtil;
@@ -113,7 +112,7 @@ public class WorkflowBroker extends DatacenterBroker {
         cloudletsSubmitted--;
         if (getCloudletList().isEmpty() && cloudletsSubmitted == 0) { // all cloudlets executed
             log.info("{}: {}: All Cloudlets executed. Finishing...", CloudSim.clock(), getName());
-//            clearDatacenters();
+            clearDatacenters();
             finishExecution();
         } else {
             submitCloudlets();
@@ -168,7 +167,7 @@ public class WorkflowBroker extends DatacenterBroker {
     @Override
     protected void clearDatacenters() {
         for (GuestEntity vm : getGuestsCreatedList()) {
-            log.info("{}: {}: Destroying {} #{}", CloudSim.clock(), getName(), vm.getClassName(), vm.getId());
+            log.trace("{}: {}: Destroying {} #{}", CloudSim.clock(), getName(), vm.getClassName(), vm.getId());
             sendNow(getVmsToDatacentersMap().get(vm.getId()), CloudActionTags.VM_DESTROY, vm);
         }
 
