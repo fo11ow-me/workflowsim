@@ -3,8 +3,8 @@ package com.qiujie.example;
 
 import com.qiujie.comparator.DefaultComparator;
 import com.qiujie.comparator.LengthComparator;
-import com.qiujie.entity.Parameter;
-import com.qiujie.entity.SimParameter;
+import com.qiujie.entity.Param;
+import com.qiujie.entity.SimParam;
 import com.qiujie.starter.ExperimentStarter;
 import com.qiujie.planner.*;
 
@@ -33,8 +33,8 @@ public class Example05 extends ExperimentStarter {
                 , "Montage_400"
         );
 
-        addParam(new SimParameter(seed, daxList, RandomPlanner.class, new Parameter().setWorkflowComparator(DefaultComparator.class).setAscending(true)));
-        addParam(new SimParameter(seed, daxList, RandomPlanner.class, new Parameter().setWorkflowComparator(LengthComparator.class).setAscending(false)));
-        addParam(new SimParameter(seed, daxList, HEFTPlanner.class, new Parameter().setWorkflowComparator(DefaultComparator.class).setAscending(true)));
+        addParam(new SimParam(seed, daxList, RandomPlanner.class, new Param().setWorkflowComparator(DefaultComparator.class).setAscending(true)));
+        addParam(new SimParam(seed, daxList, RandomPlanner.class, new Param().setWorkflowComparator(LengthComparator.class).setAscending(false)));
+        addParam(new SimParam(seed, daxList, HEFTPlanner.class, new Param().setWorkflowComparator(DefaultComparator.class).setAscending(true)));
     }
 }

@@ -3,7 +3,7 @@ package com.qiujie.example;
 import ch.qos.logback.classic.Level;
 import com.qiujie.aop.ClockModifier;
 import com.qiujie.entity.Job;
-import com.qiujie.entity.Parameter;
+import com.qiujie.entity.Param;
 import com.qiujie.entity.Workflow;
 import com.qiujie.core.WorkflowBroker;
 import com.qiujie.planner.RandomPlanner;
@@ -42,7 +42,7 @@ public class Example01 {
         // create datacenters
         List<Datacenter> datacenterList = ExperimentUtil.createDatacenters();
         // create broker
-        WorkflowBroker broker = new WorkflowBroker(random, new RandomPlanner(random, new Parameter()));
+        WorkflowBroker broker = new WorkflowBroker(random, new RandomPlanner(random, new Param()));
         // submit vms
         List<Vm> vmList = ExperimentUtil.createVms(random, broker.getId());
         broker.submitGuestList(vmList);

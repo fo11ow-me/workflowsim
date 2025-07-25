@@ -16,12 +16,10 @@ public class ExecWindow {
     private final double startTime;
     // execution finish time
     private final double finishTime;
-    private final Job job;
 
-    public ExecWindow(double startTime, double finishTime, Job job) {
+    public ExecWindow(double startTime, double finishTime) {
         this.id = nextId.getAndIncrement();
         this.startTime = startTime;
         this.finishTime = finishTime;
-        this.job = job;
     }
 }

@@ -39,7 +39,7 @@ import static com.qiujie.Constants.*;
 public class ExperimentUtil {
 
     public static List<Cpu> getCpuList() {
-        try (InputStream inputStream = ExperimentUtil.class.getClassLoader().getResourceAsStream("cpu.json")) {
+        try (InputStream inputStream = ClassLoader.getSystemClassLoader().getResourceAsStream("cpu.json")) {
             if (inputStream == null) {
                 throw new IORuntimeException("Unable to find cpu.json file");
             }
@@ -98,7 +98,7 @@ public class ExperimentUtil {
                 int level = freq2PowerList.size() - 1 - freq2PowerList.indexOf(freq2Power);
                 Fv fv = new Fv()
                         .setLevel(level)
-                        .setLambda(lambda).setType(cpu.getName() + "_" + level)
+                        .setLambda(lambda).setType(cpu.getName() + " (L" + level + ")")
                         .setVm(vm).setMips(mips).setFrequency(freq2Power.getFrequency()).setPower(freq2Power.getPower());
                 fvList.add(fv);
             }
@@ -120,28 +120,21 @@ public class ExperimentUtil {
      */
     public static void printSimResult(List<Job> list, String title) {
         List<Job> jobList = list.stream().sorted(Comparator.comparingDouble(Cloudlet::getGuestId)).toList();
-        Table.Builder builder = new Table.Builder("idx", IntStream.rangeClosed(0, jobList.size() - 1).boxed().toArray(Number[]::new), ColumnFormatter.number(Alignment.CENTER, 6, Precision.ZERO))
+        Table.Builder builder = new Table.Builder("Idx", IntStream.rangeClosed(0, jobList.size() - 1).boxed().toArray(Number[]::new), ColumnFormatter.number(Alignment.CENTER, 6, Precision.ZERO))
                 .addColumn("Job_Id", jobList.stream().map(Cloudlet::getCloudletId).toArray(Number[]::new), ColumnFormatter.number(Alignment.CENTER, 10, Precision.ZERO))
                 .addColumn("Job_Name", jobList.stream().map(Job::getName).toArray(String[]::new), ColumnFormatter.text(Alignment.CENTER, 30))
                 .addColumn("Status", jobList.stream().map(Cloudlet::getCloudletStatusString).toArray(String[]::new), ColumnFormatter.text(Alignment.CENTER, 10))
                 .addColumn("Dc_Id", jobList.stream().map(Cloudlet::getResourceId).toArray(Number[]::new), ColumnFormatter.number(Alignment.CENTER, 10, Precision.ZERO))
                 .addColumn("Vm_Id", jobList.stream().map(Cloudlet::getGuestId).toArray(Number[]::new), ColumnFormatter.number(Alignment.CENTER, 10, Precision.ZERO))
-                .addColumn("Vm_MIPS", jobList.stream().map(job -> String.format("%.2f (L%d)", job.getFv().getMips(), job.getFv().getLevel())).toArray(String[]::new), ColumnFormatter.text(Alignment.CENTER, 15))
+                .addColumn("MIPS", jobList.stream().map(job -> String.format("%.2f (L%d)", job.getFv().getMips(), job.getFv().getLevel())).toArray(String[]::new), ColumnFormatter.text(Alignment.CENTER, 15))
                 .addColumn("Cloudlet_Length", jobList.stream().map(Cloudlet::getCloudletLength).toArray(Number[]::new), ColumnFormatter.number(Alignment.CENTER, 20, Precision.ZERO))
                 .addColumn("Length", jobList.stream().map(Job::getLength).toArray(Number[]::new), ColumnFormatter.number(Alignment.CENTER, 15, Precision.ZERO))
-//                .addColumn("Length_Check", jobList.stream().map(job -> job.getCloudletLength() - job.getLength() - job.getFv().getMips() * job.getFileTransferTime()).toArray(Number[]::new), ColumnFormatter.number(Alignment.CENTER, 15, Precision.ZERO))
-//                .addColumn("Transfer_Time", jobList.stream().map(Job::getFileTransferTime).toArray(Number[]::new), ColumnFormatter.number(Alignment.CENTER, 15, Precision.TWO))
+                .addColumn("Retry_Count", jobList.stream().map(Job::getRetryCount).toArray(Number[]::new), ColumnFormatter.number(Alignment.CENTER, 15, Precision.ZERO))
+                .addColumn("Transfer_Time", jobList.stream().map(Job::getFileTransferTime).toArray(Number[]::new), ColumnFormatter.number(Alignment.CENTER, 15, Precision.TWO))
                 .addColumn("Start_Time", jobList.stream().map(Cloudlet::getExecStartTime).toArray(Number[]::new), ColumnFormatter.number(Alignment.CENTER, 15, Precision.TWO))
                 .addColumn("Finish_Time", jobList.stream().map(Cloudlet::getExecFinishTime).toArray(Number[]::new), ColumnFormatter.number(Alignment.CENTER, 15, Precision.TWO))
                 .addColumn("Process_Time", jobList.stream().map(Cloudlet::getActualCPUTime).toArray(Number[]::new), ColumnFormatter.number(Alignment.CENTER, 15, Precision.TWO))
-//                .addColumn("Process_Time_Check", jobList.stream().map(job -> job.getActualCPUTime() - job.getCloudletLength() / job.getFv().getMips()).toArray(Number[]::new), ColumnFormatter.number(Alignment.CENTER, 20, Precision.TWO))
                 .addColumn("Elec_Cost", jobList.stream().map(Job::getElecCost).toArray(Number[]::new), ColumnFormatter.number(Alignment.CENTER, 15, Precision.TWO))
-//                .addColumn("Elec_Cost_Check", jobList.stream().map(job -> {
-//                    WorkflowDatacenter dc = (WorkflowDatacenter) job.getFv().getVm().getDatacenter();
-//                    return ExperimentUtil.calculateElecCost(dc.getElecPrice(), job.getExecStartTime(), job.getExecFinishTime(), job.getFv().getPower()) - job.getElecCost();
-//                }).toArray(Number[]::new), ColumnFormatter.number(Alignment.CENTER, 20, Precision.TWO))
-                .addColumn("Retry_Count", jobList.stream().map(Job::getRetryCount).toArray(Number[]::new), ColumnFormatter.number(Alignment.CENTER, 15, Precision.ZERO))
-//                .addColumn("Count", jobList.stream().map(Job::getCount).toArray(Number[]::new), ColumnFormatter.number(Alignment.CENTER, 10, Precision.ZERO))
                 .addColumn("Depth", jobList.stream().map(Job::getDepth).toArray(Number[]::new), ColumnFormatter.number(Alignment.CENTER, 5, Precision.ZERO));
         Table table = builder.build();
         List<Integer> dcIds = jobList.stream().map(Cloudlet::getResourceId).distinct().toList();
@@ -160,7 +153,7 @@ public class ExperimentUtil {
         List<Result> sortByOverdueCount = list.stream().sorted(Comparator.comparingInt(Result::getOverdueCount)).toList();
         List<Result> sortByPlnRuntime = list.stream().sorted(Comparator.comparingDouble(Result::getPlnRuntime)).toList();
         List<Result> sortByRuntime = list.stream().sorted(Comparator.comparingDouble(Result::getRuntime)).toList();
-        Table.Builder builder = new Table.Builder("idx", IntStream.rangeClosed(0, list.size() - 1).boxed().toArray(Number[]::new), ColumnFormatter.number(Alignment.CENTER, 6, Precision.ZERO))
+        Table.Builder builder = new Table.Builder("Idx", IntStream.rangeClosed(0, list.size() - 1).boxed().toArray(Number[]::new), ColumnFormatter.number(Alignment.CENTER, 6, Precision.ZERO))
                 .addColumn("Name", list.stream().map(Result::getName).toArray(String[]::new), ColumnFormatter.text(Alignment.CENTER, 80))
                 .addColumn("Elec_Cost", list.stream().map(result -> String.format("%.2f (%d)", result.getElecCost(), sortByElecCost.indexOf(result))).toArray(String[]::new), ColumnFormatter.text(Alignment.CENTER, 20))
                 .addColumn("Finish_Time", list.stream().map(result -> String.format("%.2f (%d)", result.getFinishTime(), sortByFinishTime.indexOf(result))).toArray(String[]::new), ColumnFormatter.text(Alignment.CENTER, 20))

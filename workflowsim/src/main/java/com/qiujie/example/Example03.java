@@ -4,7 +4,7 @@ package com.qiujie.example;
 import ch.qos.logback.classic.Level;
 import com.qiujie.aop.ClockModifier;
 import com.qiujie.entity.Job;
-import com.qiujie.entity.Parameter;
+import com.qiujie.entity.Param;
 import com.qiujie.entity.Workflow;
 import com.qiujie.core.WorkflowBroker;
 import com.qiujie.planner.HEFTPlanner;
@@ -50,13 +50,13 @@ public class Example03 {
 
         List<Datacenter> datacenterList = ExperimentUtil.createDatacenters();
 
-        WorkflowBroker broker = new WorkflowBroker(random, new HEFTPlanner(random, new Parameter()));
+        WorkflowBroker broker = new WorkflowBroker(random, new HEFTPlanner(random, new Param()));
         List<Vm> vmList = ExperimentUtil.createVms(random, broker.getId());
         broker.submitGuestList(vmList);
         List<Workflow> workflowList = daxList.stream().map(WorkflowParser::parse).toList();
         broker.submitWorkflowList(workflowList);
 
-        WorkflowBroker broker1 = new WorkflowBroker(random, new HEFTPlanner(random, new Parameter()));
+        WorkflowBroker broker1 = new WorkflowBroker(random, new HEFTPlanner(random, new Param()));
         List<Vm> vmList1 = ExperimentUtil.createVms(random, broker1.getId());
         broker1.submitGuestList(vmList1);
         List<Workflow> workflowList1 = daxList1.stream().map(WorkflowParser::parse).toList();
