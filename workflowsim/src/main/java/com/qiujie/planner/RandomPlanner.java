@@ -22,7 +22,7 @@ import java.util.*;
 public class RandomPlanner extends WorkflowPlannerAbstract {
 
     private Map<Job, Map<Vm, Double>> localDataTransferTimeMap;
-    private Map<Job, Double> eftMap;
+    private Map<Job, Double> finishTimeMap;
     private Map<Job, Double> upwardRankMap;
 
     public RandomPlanner(ContinuousDistribution random, Param param) {
@@ -32,7 +32,7 @@ public class RandomPlanner extends WorkflowPlannerAbstract {
     public void init() throws Exception {
         Class<?> clazz = Class.forName(getParam().getWorkflowComparator());
         Constructor<?> constructor = clazz.getDeclaredConstructor();
-        WorkflowComparatorInterface comparatorInterface =(WorkflowComparatorInterface) constructor.newInstance();
+        WorkflowComparatorInterface comparatorInterface = (WorkflowComparatorInterface) constructor.newInstance();
         Comparator<Workflow> workflowComparator = comparatorInterface.get(getParam().isAscending());
         getWorkflowList().sort(workflowComparator);
     }
@@ -45,7 +45,7 @@ public class RandomPlanner extends WorkflowPlannerAbstract {
         init();
         for (Workflow workflow : getWorkflowList()) {
             calculateUpwardRank(workflow);
-            calculateExecutionTimeAndReliability(workflow);
+            calculateExecTimeAndReliability(workflow);
             allocateJobs(workflow);
         }
     }
@@ -55,19 +55,18 @@ public class RandomPlanner extends WorkflowPlannerAbstract {
      * calculate predicted average local data transfer time
      */
     private Map<Job, Double> calculateAvgLocalDataTransferTime(Workflow workflow) {
-        localDataTransferTimeMap = new HashMap<>();
         Map<Job, Double> avgLocalDataTransferTimeMap = new HashMap<>();
-        int vmNum = getVmList().size();
+        localDataTransferTimeMap = new HashMap<>();
         for (Job job : workflow.getJobList()) {
             double total = 0.0;
-            localDataTransferTimeMap.put(job, new HashMap<>());
+            Map<Vm, Double> jobLocalDataTransferTimeMap = new HashMap<>();
             for (Vm vm : getVmList()) {
                 double temp = ExperimentUtil.calculateLocalDataTransferTime(job, (Host) vm.getHost());
-                localDataTransferTimeMap.get(job).put(vm, temp);
+                jobLocalDataTransferTimeMap.put(vm, temp);
                 total += temp;
             }
-            double avgTime = total / vmNum;
-            avgLocalDataTransferTimeMap.put(job, avgTime);
+            avgLocalDataTransferTimeMap.put(job, total / getVmList().size());
+            localDataTransferTimeMap.put(job, jobLocalDataTransferTimeMap);
         }
         return avgLocalDataTransferTimeMap;
     }
@@ -115,24 +114,24 @@ public class RandomPlanner extends WorkflowPlannerAbstract {
     private void allocateJobs(Workflow workflow) {
         log.info("{}: {}: Starting planning workflow #{} {}, a total of {} Jobs...", CloudSim.clock(), this, workflow.getId(), workflow.getName(), workflow.getJobNum());
         List<Job> sequence = workflow.getJobList().stream().sorted(Comparator.comparingDouble(upwardRankMap::get).reversed()).toList();
-        eftMap = new HashMap<>();
+        Set<Job> scheduledSet = new HashSet<>();
+        finishTimeMap = new HashMap<>();
         Solution solution = new Solution();
         double elecCost = 0;
         double reliability = 1;
         double finishTime = 0;
-        List<Job> scheduleSequence = new ArrayList<>();
-        while (scheduleSequence.size() < sequence.size()) {
+        while (scheduledSet.size() < sequence.size()) {
             for (Job job : sequence) {
-                if (scheduleSequence.contains(job) || !new HashSet<>(scheduleSequence).containsAll(job.getParentList())) {
+                if (scheduledSet.contains(job) || !scheduledSet.containsAll(job.getParentList())) {
                     continue;
                 }
-                scheduleSequence.add(job);
+                scheduledSet.add(job);
                 elecCost += allocateJob(job, solution, getExecWindowMap());
                 reliability *= reliabilityMap.get(job).get(solution.getResult().get(job));
-                finishTime = Math.max(finishTime, eftMap.get(job));
+                finishTime = Math.max(finishTime, finishTimeMap.get(job));
+                solution.getSequence().add(job);
             }
         }
-        solution.setSequence(scheduleSequence);
         solution.setElecCost(elecCost);
         solution.setReliability(reliability);
         solution.setFinishTime(finishTime);
@@ -156,23 +155,23 @@ public class RandomPlanner extends WorkflowPlannerAbstract {
      * @return electric cost
      */
     private double allocateJob(Job job, Solution solution, Map<Vm, List<ExecWindow>> execWindowMap) {
-        double beginTime = job.getParentList().isEmpty() ? 0 : job.getParentList().stream().mapToDouble(eftMap::get).min().getAsDouble();
-        Vm vm = ExperimentUtil.getRandomElement(getRandom(), getVmList());
-        DvfsVm dvfsVm = (DvfsVm) vm;
+        double transferStartTime = job.getParentList().stream().mapToDouble(finishTimeMap::get).min().orElse(0);
+        DvfsVm vm = (DvfsVm) ExperimentUtil.getRandomElement(getRandom(), getVmList());
         double max = 0;
         for (Job parent : job.getParentList()) {
-            max = Math.max(max, eftMap.get(parent) + ExperimentUtil.calculatePredecessorDataTransferTime(job, (Host) dvfsVm.getHost(), parent, (Host) solution.getResult().get(parent).getVm().getHost()));
+            max = Math.max(max, finishTimeMap.get(parent) + ExperimentUtil.calculatePredecessorDataTransferTime(job, (Host) vm.getHost(), parent, (Host) solution.getResult().get(parent).getVm().getHost()));
         }
-        double readyTime = max + localDataTransferTimeMap.get(job).get(dvfsVm);
-        Fv fv = ExperimentUtil.getRandomElement(getRandom(), dvfsVm.getFvList());
-        double eft = findEFT(job, fv, readyTime, execTimeMap, true, execWindowMap);
-        WorkflowDatacenter dc = (WorkflowDatacenter) fv.getVm().getDatacenter();
-        List<Double> elecPrice = dc.getElecPrice();
-        double transferElecCost = ExperimentUtil.calculateElecCost(elecPrice, beginTime, readyTime, fv.getPower());
-        double execElecCost = ExperimentUtil.calculateElecCost(elecPrice, eft - execTimeMap.get(job).get(fv), eft, fv.getPower());
-        double elecCost = transferElecCost + execElecCost;
-        eftMap.put(job, eft);
-        solution.bindJobToFv(job, fv);
+        double readyTime = max + localDataTransferTimeMap.get(job).get(vm);
+        Fv fv = ExperimentUtil.getRandomElement(getRandom(), vm.getFvList());
+        ExecWindow execWindow = findExecWindow(job, fv, readyTime, execWindowMap);
+        WorkflowDatacenter datacenter = (WorkflowDatacenter) fv.getVm().getDatacenter();
+        List<Double> elecPrice = datacenter.getElecPrice();
+        double elecCost = ExperimentUtil.calculateElecCost(elecPrice, transferStartTime, readyTime, execWindow.getFv().getPower()) +
+                ExperimentUtil.calculateElecCost(elecPrice, execWindow.getStartTime(), execWindow.getFinishTime(), execWindow.getFv().getPower());
+        execWindow.setElecCost(elecCost);
+        execWindowMap.get(execWindow.getFv().getVm()).add(execWindow.getInsertPos(), execWindow);
+        finishTimeMap.put(job, execWindow.getFinishTime());
+        solution.bindJobToFv(job, execWindow.getFv());
         return elecCost;
     }
 
