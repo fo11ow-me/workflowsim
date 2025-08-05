@@ -122,14 +122,13 @@ public class WorkflowDatacenter extends Datacenter {
      * @return
      */
     private double predictFileTransferTime(Job job, Host host) {
-        double predDateTransferTime = Double.MIN_VALUE;
+        double predDateTransferTime = 0;
         double temp;
         for (Job parentJob : job.getParentList()) {
             Host parentHost = (Host) getVmAllocationPolicy().getHost(parentJob.getGuestId(), parentJob.getUserId());
             // if parentHost == null, indicate parent job is not in this datacenter
             if (parentHost == null) {
-                List<String> parentOutputFiles = parentJob.getOutputFileList().stream().map(com.qiujie.entity.File::getName).toList();
-                double dataSize = job.getPredInputFileList().stream().filter(file -> parentOutputFiles.contains(file.getName())).mapToDouble(File::getSize).sum();
+                double dataSize = job.getPredInputFilesMap().get(parentJob).stream().mapToDouble(File::getSize).sum();
                 temp = dataSize / Constants.INTER_BANDWIDTH;
             } else {
                 temp = ExperimentUtil.calculatePredecessorDataTransferTime(job, host, parentJob, parentHost);
