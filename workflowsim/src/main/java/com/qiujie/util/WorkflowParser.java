@@ -28,7 +28,6 @@ public class WorkflowParser {
      * @return workflow
      */
     public static Workflow parse(String dax) {
-        // parse using builder to get DOM representation of the XML file
         java.io.File daxFile = new java.io.File(DAX_DIR + dax + ".xml");
         if (!daxFile.exists()) {
             throw new IllegalStateException("DAX file not found: " + daxFile.getAbsolutePath());
@@ -40,13 +39,16 @@ public class WorkflowParser {
             throw new RuntimeException(e);
         }
         Element root = dom.getRootElement();
-        Map<String, Job> nodeMap = new LinkedHashMap<>();
+        Map<String, Job> idJobMap = new LinkedHashMap<>();
+        Map<Job, List<File>> jobInputFileListMap = new HashMap<>();
         for (Element node : root.getChildren()) {
             switch (node.getName().toLowerCase()) {
                 case "job":
                     String id = node.getAttributeValue("id");
                     double runtime = Math.max(Double.parseDouble(node.getAttributeValue("runtime")), 0);
                     Job job = new Job(dax + "_" + id, (long) runtime);
+                    List<File> inputFileList = new ArrayList<>();
+                    Set<String> fileNameSet = new HashSet<>(); // avoid duplicate file
                     for (Element fileNode : node.getChildren()) {
                         if (fileNode.getName().equalsIgnoreCase("uses")) {
                             String file = fileNode.getAttributeValue("file");
@@ -57,28 +59,33 @@ public class WorkflowParser {
                             double size = Math.max(Double.parseDouble(fileNode.getAttributeValue("size")), 0);
                             switch (link) {
                                 case "input":
-                                    job.getPredInputFileList().add(new File(file, size));
+                                    if (!fileNameSet.contains(file)) {
+                                        inputFileList.add(new File(file, size));
+                                        fileNameSet.add(file);
+                                    }
                                     break;
                                 case "output":
-                                    job.getOutputFileList().add(new File(file, size));
+                                    if (!fileNameSet.contains(file)) {
+                                        job.getOutputFileList().add(new File(file, size));
+                                        fileNameSet.add(file);
+                                    }
                                     break;
                                 default:
-                                    log.warn("Cannot identify file type");
-                                    break;
+                                    throw new IllegalStateException("Cannot identify file type");
                             }
                         }
                     }
-                    nodeMap.put(id, job);
-
+                    idJobMap.put(id, job);
+                    jobInputFileListMap.put(job, inputFileList);
                     break;
                 case "child":
-                    String childName = node.getAttributeValue("ref");
-                    if (nodeMap.containsKey(childName)) {
-                        Job childJob = nodeMap.get(childName);
+                    String childId = node.getAttributeValue("ref");
+                    if (idJobMap.containsKey(childId)) {
+                        Job childJob = idJobMap.get(childId);
                         for (Element parent : node.getChildren()) {
-                            String parentName = parent.getAttributeValue("ref");
-                            if (nodeMap.containsKey(parentName)) {
-                                Job parentJob = nodeMap.get(parentName);
+                            String parentId = parent.getAttributeValue("ref");
+                            if (idJobMap.containsKey(parentId)) {
+                                Job parentJob = idJobMap.get(parentId);
                                 parentJob.addChild(childJob);
                                 childJob.addParent(parentJob);
                             }
@@ -87,62 +94,56 @@ public class WorkflowParser {
                     break;
             }
         }
-
-        setDepth(nodeMap);
-        List<Job> jobList = new ArrayList<>(nodeMap.values());
-        identifyLocalInputFile(jobList);
+        List<Job> jobList = new ArrayList<>(idJobMap.values());
+        settingDepth(jobList);
+        identifyInputFile(jobList, jobInputFileListMap);
         return new Workflow(dax, jobList);
     }
 
-
-    private static void setDepth(Map<String, Job> nodeMap) {
-        // If a job has no parent, then it is root job.
-        List<Job> rootList = new ArrayList<>();
-        for (Job job : nodeMap.values()) {
-            job.setDepth(0);
-            if (job.getParentList().isEmpty()) {
-                rootList.add(job);
-            }
-        }
-
-        for (Job job : rootList) {
-            setDepth(job, 0);
-        }
-    }
-
-
     /**
      * Set the depth of each job
-     *
-     * @param job
-     * @param depth
      */
-    private static void setDepth(Job job, int depth) {
-        if (job.getDepth() < depth) {
-            job.setDepth(depth);
-        }
-        for (Job child : job.getChildList()) {
-            setDepth(child, job.getDepth() + 1);
-        }
-    }
-
-
-    /**
-     * indentify local input file
-     *
-     * @param jobList
-     */
-    private static void identifyLocalInputFile(List<Job> jobList) {
+    private static void settingDepth(List<Job> jobList) {
         for (Job job : jobList) {
-            // avoid concurrent modification
-            List<File> predInputFileListCopy = new ArrayList<>(job.getPredInputFileList());
-            Set<String> parentOutputFileNameList = job.getParentList().stream().flatMap(parent -> parent.getOutputFileList().stream()).map(File::getName).collect(Collectors.toSet());
-            for (File file : predInputFileListCopy) {
-                if (!parentOutputFileNameList.contains(file.getName())) {
-                    job.getLocalInputFileList().add(file);
-                    job.getPredInputFileList().remove(file); // now remove safely
-                }
+            job.setDepth(-1); // -1 means unset
+        }
+        for (Job job : jobList) {
+            if (job.getParentList().isEmpty()) {
+                updateDepth(job, 0);
             }
         }
     }
+
+    private static void updateDepth(Job job, int depth) {
+        if (depth > job.getDepth()) {
+            job.setDepth(depth);
+            for (Job child : job.getChildList()) {
+                updateDepth(child, depth + 1);
+            }
+        }
+    }
+
+    /**
+     * identify local or pred input file
+     */
+    private static void identifyInputFile(List<Job> jobList, Map<Job, List<File>> jobInputFileListMap) {
+        for (Job job : jobList) {
+            List<File> inputFileList = jobInputFileListMap.get(job);
+            Set<String> parentsOutputFileNameSet = job.getParentList().stream().flatMap(parent -> parent.getOutputFileList().stream()).map(File::getName).collect(Collectors.toSet());
+            List<File> predInputFileList = new ArrayList<>();
+            for (File file : inputFileList) {
+                if (parentsOutputFileNameSet.contains(file.getName())) {
+                    predInputFileList.add(file);
+                } else {
+                    job.getLocalInputFileList().add(file);
+                }
+            }
+            for (Job parent : job.getParentList()) {
+                Set<String> parentOutputFileNameSet = parent.getOutputFileList().stream().map(File::getName).collect(Collectors.toSet());
+                List<File> fileList = predInputFileList.stream().filter(file -> parentOutputFileNameSet.contains(file.getName())).toList();
+                job.getPredInputFilesMap().put(parent, fileList);
+            }
+        }
+    }
+
 }
