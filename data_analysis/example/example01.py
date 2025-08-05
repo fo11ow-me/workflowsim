@@ -8,7 +8,7 @@ class Main(unittest.TestCase):
         self.output_dir = "..\\..\\data\\anova"
 
     def test_two_way_anova(self):
-        """Test two-way ANOVA with jobSequenceStrategy and neighborhoodFactor"""
+        """Test two-way ANOVA with workflowComparator and ascending"""
         anova(
             json_path=self.base_path + "Example06.jsonl",
             target_variable="elecCost",

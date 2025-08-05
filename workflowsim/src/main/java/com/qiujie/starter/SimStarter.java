@@ -61,7 +61,7 @@ public class SimStarter {
         run();
         long end = System.currentTimeMillis();
         double runtime = (end - start) / 1000.0;
-        log.info("{}: Finished in {}s", name, runtime);
+        log.info("{}: Finished in {}s\n", name, runtime);
         result.setRuntime(runtime);
     }
 

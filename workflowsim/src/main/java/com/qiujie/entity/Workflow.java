@@ -36,7 +36,7 @@ public class Workflow {
         this.jobList = jobList;
         this.jobNum = jobList.size();
         this.length = jobList.stream().mapToLong(Job::getLength).sum();
-        this.depth = jobList.stream().mapToInt(Job::getDepth).max().orElse(0);
+        this.depth = jobList.stream().mapToInt(Job::getDepth).max().getAsInt();
     }
 
     public boolean isOverdue() {

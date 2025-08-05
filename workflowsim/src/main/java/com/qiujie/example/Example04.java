@@ -44,6 +44,7 @@ public class Example04 {
         SimStarter simStarter3 = new SimStarter(new SimParam(seed, daxList, HEFTPlanner.class, new Param().setWorkflowComparator(JobNumComparator.class).setAscending(false)));
         List<SimStarter> simStarterList = List.of(simStarter, simStarter1, simStarter2, simStarter3);
         ExperimentUtil.printExperimentResult(simStarterList.stream().map(SimStarter::getResult).toList());
-        System.out.println(name + " run " + (System.currentTimeMillis() - seed) / 1000.0 + "s");
+        ExperimentUtil.generateExperimentData(simStarterList.stream().map(SimStarter::getResult).toList(), name);
+        System.out.println(name + " take " + (System.currentTimeMillis() - seed) / 1000.0 + "s");
     }
 }

@@ -21,8 +21,7 @@ public class Solution {
     private final Map<Job, Fv> map;
 
     @Getter
-    @Setter
-    private List<Job> sequence;
+    private final List<Job> sequence;
 
     @Getter
     @Setter
@@ -40,6 +39,7 @@ public class Solution {
     public Solution() {
         this.id = nextId.getAndIncrement();
         map = new HashMap<>();
+        sequence = new ArrayList<>();
     }
 
     public Map<Job, Fv> getResult() {

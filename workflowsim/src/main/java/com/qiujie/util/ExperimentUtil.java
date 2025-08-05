@@ -134,7 +134,7 @@ public class ExperimentUtil {
                 .addColumn("Start_Time", jobList.stream().map(Cloudlet::getExecStartTime).toArray(Number[]::new), ColumnFormatter.number(Alignment.CENTER, 15, Precision.TWO))
                 .addColumn("Finish_Time", jobList.stream().map(Cloudlet::getExecFinishTime).toArray(Number[]::new), ColumnFormatter.number(Alignment.CENTER, 15, Precision.TWO))
                 .addColumn("Process_Time", jobList.stream().map(Cloudlet::getActualCPUTime).toArray(Number[]::new), ColumnFormatter.number(Alignment.CENTER, 15, Precision.TWO))
-                .addColumn("Elec_Cost", jobList.stream().map(Job::getElecCost).toArray(Number[]::new), ColumnFormatter.number(Alignment.CENTER, 15, Precision.TWO))
+                .addColumn("Elec_Cost", jobList.stream().map(Job::getElecCost).toArray(Number[]::new), ColumnFormatter.number(Alignment.CENTER, 15, Precision.SIX))
                 .addColumn("Depth", jobList.stream().map(Job::getDepth).toArray(Number[]::new), ColumnFormatter.number(Alignment.CENTER, 5, Precision.ZERO));
         Table table = builder.build();
         List<Integer> dcIds = jobList.stream().map(Cloudlet::getResourceId).distinct().toList();
@@ -155,12 +155,12 @@ public class ExperimentUtil {
         List<Result> sortByRuntime = list.stream().sorted(Comparator.comparingDouble(Result::getRuntime)).toList();
         Table.Builder builder = new Table.Builder("Idx", IntStream.rangeClosed(0, list.size() - 1).boxed().toArray(Number[]::new), ColumnFormatter.number(Alignment.CENTER, 6, Precision.ZERO))
                 .addColumn("Name", list.stream().map(Result::getName).toArray(String[]::new), ColumnFormatter.text(Alignment.CENTER, 80))
-                .addColumn("Elec_Cost", list.stream().map(result -> String.format("%.2f (%d)", result.getElecCost(), sortByElecCost.indexOf(result))).toArray(String[]::new), ColumnFormatter.text(Alignment.CENTER, 20))
+                .addColumn("Elec_Cost", list.stream().map(result -> String.format("%.6f (%d)", result.getElecCost(), sortByElecCost.indexOf(result))).toArray(String[]::new), ColumnFormatter.text(Alignment.CENTER, 20))
                 .addColumn("Finish_Time", list.stream().map(result -> String.format("%.2f (%d)", result.getFinishTime(), sortByFinishTime.indexOf(result))).toArray(String[]::new), ColumnFormatter.text(Alignment.CENTER, 20))
-                .addColumn("Retry_Count", list.stream().map(result -> String.format("%d (%d)", result.getRetryCount(), sortByRetryCount.indexOf(result))).toArray(String[]::new), ColumnFormatter.text(Alignment.CENTER, 15))
-                .addColumn("Overdue_Count", list.stream().map(result -> String.format("%d (%d)", result.getOverdueCount(), sortByOverdueCount.indexOf(result))).toArray(String[]::new), ColumnFormatter.text(Alignment.CENTER, 15))
-                .addColumn("Pln_Runtime", list.stream().map(result -> String.format("%.2f (%d)", result.getPlnRuntime(), sortByPlnRuntime.indexOf(result))).toArray(String[]::new), ColumnFormatter.text(Alignment.CENTER, 15))
-                .addColumn("Runtime", list.stream().map(result -> String.format("%.2f (%d)", result.getPlnRuntime(), sortByRuntime.indexOf(result))).toArray(String[]::new), ColumnFormatter.text(Alignment.CENTER, 15));
+                .addColumn("Retry_Count", list.stream().map(result -> String.format("%d (%d)", result.getRetryCount(), sortByRetryCount.indexOf(result))).toArray(String[]::new), ColumnFormatter.text(Alignment.CENTER, 20))
+                .addColumn("Overdue_Count", list.stream().map(result -> String.format("%d (%d)", result.getOverdueCount(), sortByOverdueCount.indexOf(result))).toArray(String[]::new), ColumnFormatter.text(Alignment.CENTER, 20))
+                .addColumn("Pln_Runtime", list.stream().map(result -> String.format("%.4f (%d)", result.getPlnRuntime(), sortByPlnRuntime.indexOf(result))).toArray(String[]::new), ColumnFormatter.text(Alignment.CENTER, 20))
+                .addColumn("Runtime", list.stream().map(result -> String.format("%.4f (%d)", result.getPlnRuntime(), sortByRuntime.indexOf(result))).toArray(String[]::new), ColumnFormatter.text(Alignment.CENTER, 20));
         Table table = builder.build();
         log.info("\n                                                                               {} Experiment Result\n{}\n", title, table);
     }
@@ -203,27 +203,43 @@ public class ExperimentUtil {
 
     public static double calculatePredecessorDataTransferTime(Job job, Host host, Job parentJob, Host parentHost) {
         // No data transfer time is required if the job and its parent are on the same host.
-        if (host.getId() == parentHost.getId()) {
-            return 0;
-        }
-        List<String> parentOutputFiles = parentJob.getOutputFileList().stream().map(com.qiujie.entity.File::getName).toList();
-        double dataSize = job.getPredInputFileList().stream().filter(file -> parentOutputFiles.contains(file.getName())).mapToDouble(com.qiujie.entity.File::getSize).sum();
+        if (host.getId() == parentHost.getId()) return 0;
+        double dataSize = job.getPredInputFilesMap().get(parentJob).stream().mapToDouble(com.qiujie.entity.File::getSize).sum();
         return host.getDatacenter().getId() == parentHost.getDatacenter().getId() ? dataSize / INTRA_BANDWIDTH : dataSize / INTER_BANDWIDTH;
     }
 
+    /**
+     * Calculate reliability based on failure rate (lambda) and execution time using exponential decay model
+     *
+     * @param lambda
+     * @param duration
+     * @return
+     */
     public static double calculateReliability(double lambda, double duration) {
         return Math.exp(-lambda * duration);
     }
 
+
+    /**
+     * Calculate the electricity cost
+     *
+     * @param elecPrice $/kWh
+     * @param startTime s
+     * @param endTime   s
+     * @param power     watt
+     */
     public static double calculateElecCost(List<Double> elecPrice, double startTime, double endTime, double power) {
         double totalCost = 0.0;
         double currentTime = startTime / 3600.0;
+        if (startTime > endTime) {
+            throw new IllegalStateException(String.format("startTime > endTime: %s > %s", startTime, endTime));
+        }
         double remainingDuration = (endTime - startTime) / 3600.0;
         while (remainingDuration > 0) {
-            int hourIndex = (int) Math.floor(currentTime) % elecPrice.size();
+            int hourIndex = (int) (Math.floor(currentTime) % elecPrice.size());
             double nextHourTime = Math.floor(currentTime) + 1.0;
             double availableDuration = Math.min(nextHourTime - currentTime, remainingDuration);
-            double electricityUsed = power * availableDuration;
+            double electricityUsed = (power * availableDuration) / 1000.0; // kWh
             totalCost += electricityUsed * elecPrice.get(hourIndex);
             currentTime += availableDuration;
             remainingDuration -= availableDuration;
@@ -231,6 +247,32 @@ public class ExperimentUtil {
         return totalCost;
     }
 
+    /**
+     * calculate avg elec price
+     *
+     * @param elecPrice $/kWh
+     * @param startTime s
+     * @param endTime   s
+     */
+    public static double calculateAvgElecPrice(List<Double> elecPrice, double startTime, double endTime) {
+        double totalCost = 0.0;
+        double currentTime = startTime / 3600.0;
+        if (startTime >= endTime) {
+            int hourIndex = (int) (Math.floor(currentTime) % elecPrice.size());
+            return elecPrice.get(hourIndex);
+        }
+        double duration = (endTime - startTime) / 3600.0;
+        double remainingDuration = duration;
+        while (remainingDuration > 0) {
+            int hourIndex = (int) (Math.floor(currentTime) % elecPrice.size());
+            double nextHourTime = Math.floor(currentTime) + 1.0;
+            double availableDuration = Math.min(nextHourTime - currentTime, remainingDuration);
+            totalCost += availableDuration * elecPrice.get(hourIndex);
+            currentTime += availableDuration;
+            remainingDuration -= availableDuration;
+        }
+        return totalCost / duration;
+    }
 
     /**
      * @param maxValue
@@ -288,6 +330,4 @@ public class ExperimentUtil {
 
         return prefix.toString();
     }
-
-
 }

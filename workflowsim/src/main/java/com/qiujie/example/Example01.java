@@ -60,6 +60,6 @@ public class Example01 {
         ExperimentUtil.printSimResult(cloudletReceivedList, broker.getName());
         // generate gantt chart data
         ExperimentUtil.generateSimData(cloudletReceivedList, className + "_" + broker.getName());
-        System.out.println(className + " task " + (System.currentTimeMillis() - send) / 1000.0 + "s");
+        System.out.println(className + " take " + (System.currentTimeMillis() - send) / 1000.0 + "s");
     }
 }
