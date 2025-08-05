@@ -75,6 +75,6 @@ public class Example03 {
 
         String className = new Object() {
         }.getClass().getEnclosingClass().getSimpleName();
-        System.out.println(className + " task " + (System.currentTimeMillis() - send) / 1000.0 + "s");
+        System.out.println(className + " take " + (System.currentTimeMillis() - send) / 1000.0 + "s");
     }
 }

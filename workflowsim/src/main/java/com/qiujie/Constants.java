@@ -35,7 +35,7 @@ public class Constants {
     public static final double DC_SCHEDULING_INTERVAL = 0;
 
     /**
-     * Electricity price matrix for data centers (unit: yuan/kWh)
+     * Electricity price matrix for data centers (unit: $/kWh)
      * Structure description:
      * - Outer List contains 10 data centers
      * - Inner List contains 12-hour electricity prices for each data center
@@ -98,7 +98,7 @@ public class Constants {
     public static final List<Double> NEIGHBORHOOD_FACTOR_LIST = List.of(0.2, 0.4, 0.6, 0.8);
 //    public static final List<Double> SLACK_TIME_FACTOR_LIST = List.of(0.2, 0.4, 0.6, 0.8);
 
-    // // default parameter values
+    // default parameter values
     public static Class<? extends WorkflowComparatorInterface> WORKFLOW_COMPARATOR = WORKFLOW_COMPARATOR_LIST.getFirst();
     public static boolean ASCENDING = ASCENDING_LIST.getFirst();
     public static double DEADLINE_FACTOR = DEADLINE_FACTOR_LIST.getFirst();

@@ -13,7 +13,7 @@ public class Fv {
 
     private double frequency;
     private double mips;
-    private double power;
+    private double power; // watt
     // Transient fault arrival rate
     private double lambda;
     private int level;

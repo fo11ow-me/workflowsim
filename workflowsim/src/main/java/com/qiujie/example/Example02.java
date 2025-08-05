@@ -65,6 +65,6 @@ public class Example02 {
         ExperimentUtil.generateSimData(cloudletReceivedList, className + "_" + broker.getName());
         ExperimentUtil.generateSimData(cloudletReceivedList, className + "_" + broker.getName());
 
-        System.out.println(className + " task " + (System.currentTimeMillis() - send) / 1000.0 + "s");
+        System.out.println(className + " take " + (System.currentTimeMillis() - send) / 1000.0 + "s");
     }
 }
