@@ -5,6 +5,7 @@ import com.qiujie.entity.File;
 import com.qiujie.entity.Job;
 import com.qiujie.entity.Workflow;
 import com.qiujie.planner.WorkflowPlannerAbstract;
+import com.qiujie.test.ValidateUtil;
 import com.qiujie.util.ExperimentUtil;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
@@ -27,8 +28,11 @@ public class WorkflowBroker extends DatacenterBroker {
     private final ContinuousDistribution random;
 
     private final WorkflowPlannerAbstract planner;
+
     @Getter
     private List<Workflow> workflowList;
+
+    protected Set<Job> jobReceivedSet;
 
 
     public WorkflowBroker(ContinuousDistribution random, WorkflowPlannerAbstract planner) throws Exception {
@@ -36,6 +40,7 @@ public class WorkflowBroker extends DatacenterBroker {
         this.random = random;
         this.planner = planner;
         this.workflowList = new ArrayList<>();
+        this.jobReceivedSet = new HashSet<>();
     }
 
 
@@ -108,6 +113,7 @@ public class WorkflowBroker extends DatacenterBroker {
         Cloudlet cloudlet = (Cloudlet) ev.getData();
         Job job = (Job) cloudlet;
         getCloudletReceivedList().add(cloudlet);
+        jobReceivedSet.add(job);
         log.info("{}: {}: {} #{} {} return received, the number of finished Cloudlets is {}", CloudSim.clock(), getName(), cloudlet.getClass().getSimpleName(), cloudlet.getCloudletId(), job.getName(), getCloudletReceivedList().size());
         cloudletsSubmitted--;
         if (getCloudletList().isEmpty() && cloudletsSubmitted == 0) { // all cloudlets executed
@@ -132,7 +138,7 @@ public class WorkflowBroker extends DatacenterBroker {
         for (Cloudlet cloudlet : getCloudletList()) {
             Job job = (Job) cloudlet;
             // if its parents have not been finished, skip it
-            if (!new HashSet<>(getCloudletReceivedList()).containsAll(job.getParentList())) {
+            if (!jobReceivedSet.containsAll(job.getParentList())) {
                 continue;
             }
             GuestEntity vm;
