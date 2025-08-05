@@ -2,6 +2,7 @@ package com.qiujie.planner;
 
 import com.qiujie.entity.*;
 import com.qiujie.enums.JobSequenceStrategyEnum;
+import com.qiujie.test.ValidateUtil;
 import com.qiujie.util.ExperimentUtil;
 import lombok.AccessLevel;
 import lombok.Getter;
@@ -18,6 +19,7 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import static com.qiujie.Constants.*;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @Slf4j
 public abstract class WorkflowPlannerAbstract {
@@ -109,71 +111,34 @@ public abstract class WorkflowPlannerAbstract {
     }
 
 
-    /**
-     * find earliest finish time
-     *
-     * @param job
-     * @param fv
-     * @param readyTime
-     * @param execTimeMap
-     * @param occupySlot
-     * @return
-     */
-    protected double findEFT(Job job, Fv fv, double readyTime, Map<Job, Map<Fv, Double>> execTimeMap, boolean occupySlot, Map<Vm, List<ExecWindow>> execWindowMap) {
-        List<ExecWindow> execWindows = execWindowMap.computeIfAbsent(fv.getVm(), vm -> new ArrayList<>());
+    protected ExecWindow findExecWindow(Job job, Fv fv, double readyTime, Map<Vm, List<ExecWindow>> execWindowMap) {
+        List<ExecWindow> execWindowList = execWindowMap.computeIfAbsent(fv.getVm(), vm -> new ArrayList<>());
         double execTime = execTimeMap.get(job).get(fv);
-        double eft = Double.MAX_VALUE;
-        int insertPos = execWindows.size(); // default to append to the end
+        double finishTime = Double.MAX_VALUE;
+        int insertPos = execWindowList.size(); // default to append to the end
         // consider the first window
-        if (!execWindows.isEmpty() && readyTime + execTime <= execWindows.getFirst().getStartTime()) {
-            eft = readyTime + execTime;
+        if (!execWindowList.isEmpty() && readyTime + execTime <= execWindowList.getFirst().getStartTime()) {
+            finishTime = readyTime + execTime;
             insertPos = 0;
         } else {
             // try to find a gap
-            for (int k = 0; k < execWindows.size() - 1; k++) {
-                double gapStart = Math.max(readyTime, execWindows.get(k).getFinishTime());
-                double gapEnd = execWindows.get(k + 1).getStartTime();
+            for (int k = 0; k < execWindowList.size() - 1; k++) {
+                double gapStart = Math.max(readyTime, execWindowList.get(k).getFinishTime());
+                double gapEnd = execWindowList.get(k + 1).getStartTime();
                 if (gapStart + execTime <= gapEnd) {
-                    eft = gapStart + execTime;
+                    finishTime = gapStart + execTime;
                     insertPos = k + 1;
                     break;
                 }
             }
-            if (eft == Double.MAX_VALUE) {
-                double lastWindowFinish = execWindows.isEmpty() ? readyTime : execWindows.getLast().getFinishTime();
+            if (finishTime == Double.MAX_VALUE) {
+                double lastWindowFinish = execWindowList.isEmpty() ? readyTime : execWindowList.getLast().getFinishTime();
                 double lastFinish = Math.max(readyTime, lastWindowFinish);
-                eft = lastFinish + execTime;
-                insertPos = execWindows.size();
+                finishTime = lastFinish + execTime;
+                insertPos = execWindowList.size();
             }
         }
-        if (occupySlot) {
-            double startTime = eft - execTime;
-            execWindows.add(insertPos, new ExecWindow(startTime, eft));
-        }
-        return eft;
-    }
-
-
-    protected boolean isNotTopologicalOrder(List<Job> sequence) {
-        // create a map to store the positions of each job in the sequence
-        Map<Job, Integer> positionMap = new HashMap<>();
-        for (int i = 0; i < sequence.size(); i++) {
-            positionMap.put(sequence.get(i), i);
-        }
-        // check whether each job's parent's position in the sequence is before the current job's position
-        for (Job job : sequence) {
-            for (Job parent : job.getParentList()) {
-                // If a parent is not in the sequence, return true (invalid sequence)
-                if (!positionMap.containsKey(parent)) {
-                    return true;
-                }
-                // If a parent appears after the job, return true (not topological order)
-                if (positionMap.get(parent) > positionMap.get(job)) {
-                    return true;
-                }
-            }
-        }
-        return false;
+        return new ExecWindow(finishTime - execTime, finishTime, insertPos, fv);
     }
 
 
@@ -193,15 +158,10 @@ public abstract class WorkflowPlannerAbstract {
                                   double performance,
                                   double power) {
 
-        // 1. Calculate Performance per Watt (PpW)
         double ppw = performance / power;
-        // 2. Compute the exponent for sigmoid
         double exponent = -(α / maxLoad) * (currentLoad - β * maxLoad);
-        // 3. Calculate sigmoid function
         double sigmoid = 1.0 / (1.0 + Math.exp(exponent));
-        // 4. Compute penalty term
         double penaltyTerm = 1.0 - γ * sigmoid;
-        // 5. Final score
         return ppw * penaltyTerm;
     }
 
@@ -209,71 +169,54 @@ public abstract class WorkflowPlannerAbstract {
     protected Map<Job, Map<Fv, Double>> execTimeMap;
     protected Map<Job, Map<Fv, Double>> reliabilityMap;
 
-    /**
-     * calculate predicted execution time and reliability
-     */
-    protected void calculateExecutionTimeAndReliability(Workflow workflow) {
+    protected void calculateExecTimeAndReliability(Workflow workflow) {
         // Get unique types of VMs, retaining only one instance for each type
-        List<Vm> vmList = getVmList().stream()
+        List<DvfsVm> uniqueVmList = getVmList().stream()
+                .map(vm -> (DvfsVm) vm)
                 .collect(Collectors.toMap(
-                        vm -> ((DvfsVm) vm).getCpu(),  // Use VM cpu as the key
-                        Function.identity(),            // Use the VM instance as the value
-                        (existing, replacement) -> existing // Keep the first VM if duplicate types exist
+                        DvfsVm::getCpu,
+                        Function.identity(),
+                        (existing, replacement) -> existing
                 ))
                 .values()
                 .stream()
                 .toList();
-
-        // Initialize the mapping for each task's execution time and reliability under different frequencies
         execTimeMap = new HashMap<>();
         reliabilityMap = new HashMap<>();
-
         double sumLogReliability = 0.0; // Sum of the logarithms of each task's reliability
-
-        // Iterate over all tasks in the workflow
         for (Job job : workflow.getJobList()) {
-            execTimeMap.put(job, new HashMap<>());
-            reliabilityMap.put(job, new HashMap<>());
-            double maxSubReliability = 0; // Store the maximum reliability for the current task
-
+            Map<Fv, Double> jobExecTimeMap = new HashMap<>();
+            Map<Fv, Double> jobReliabilityMap = new HashMap<>();
+            double maxSubReliability = 0.0; // Store the maximum reliability for the current task
             // Iterate over all unique VM types
-            for (Vm vm : vmList) {
-                DvfsVm dvfsVm = (DvfsVm) vm; // Cast to DvfsVm to access frequency list
-
-                // Iterate over all supported frequency-voltage pairs of the VM
-                for (Fv fv : dvfsVm.getFvList()) {
-                    // Calculate the execution time at the current frequency: task length / MIPS
+            for (DvfsVm vm : uniqueVmList) {
+                for (Fv fv : vm.getFvList()) {
                     double executionTime = job.getLength() / fv.getMips();
-                    execTimeMap.get(job).put(fv, executionTime); // Store execution time
+                    jobExecTimeMap.put(fv, executionTime);
 
-                    // Calculate reliability based on failure rate (lambda) and execution time using exponential decay model
                     double reliability = ExperimentUtil.calculateReliability(fv.getLambda(), executionTime);
-                    reliabilityMap.get(job).put(fv, reliability); // Store reliability
+                    jobReliabilityMap.put(fv, reliability);
 
-                    // Update the maximum reliability found for the current task
                     maxSubReliability = Math.max(maxSubReliability, reliability);
                 }
             }
-
+            execTimeMap.put(job, jobExecTimeMap);
+            reliabilityMap.put(job, jobReliabilityMap);
             // Protect against extreme small reliability values to avoid log(0) or negative infinity errors
             double safeReliability = Math.max(maxSubReliability, 1e-12);
-
             // Accumulate the logarithm of the maximum reliability for each task
             sumLogReliability += Math.log(safeReliability);
         }
 
-        int jobNum = workflow.getJobNum(); // Total number of tasks in the workflow
+        int jobNum = workflow.getJobNum();
 
         // Calculate the average log reliability (geometric mean in log space)
         double avgLogReliability = sumLogReliability / jobNum;
-
         // Convert the average log reliability back to the geometric mean reliability
         double smoothReliability = Math.exp(avgLogReliability);
 
-        // Set the workflow's reliability goal:
-        // Apply the reliability factor (raised to the power of task count) as a weight
-        // Multiply by the smoothed reliability to balance precision and stability
-        workflow.setReliGoal(Math.pow(getParam().getReliabilityFactor(), jobNum) * smoothReliability);
+        // Set the workflow's reliability goal
+        workflow.setReliGoal(Math.pow(getParam().getReliabilityFactor() * smoothReliability, jobNum));
     }
 
 
