@@ -8,9 +8,7 @@ import org.cloudbus.cloudsim.UtilizationModel;
 import org.cloudbus.cloudsim.UtilizationModelFull;
 import org.cloudbus.cloudsim.Vm;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 
 
@@ -25,14 +23,15 @@ public class Job extends Cloudlet {
 
     private List<Job> childList;
 
-    private List<File> predInputFileList;
+    // key: parent job
+    private Map<Job, List<File>> predInputFilesMap;
 
     private List<File> localInputFileList;
 
     private List<File> outputFileList;
 
     // the original length of job
-    private long length;
+    private long length; // MI
 
     @Setter
     private double fileTransferTime;
@@ -62,7 +61,7 @@ public class Job extends Cloudlet {
         this.elecCost = 0;
         this.parentList = new ArrayList<>();
         this.childList = new ArrayList<>();
-        this.predInputFileList = new ArrayList<>();
+        this.predInputFilesMap = new HashMap<>();
         this.localInputFileList = new ArrayList<>();
         this.outputFileList = new ArrayList<>();
     }
