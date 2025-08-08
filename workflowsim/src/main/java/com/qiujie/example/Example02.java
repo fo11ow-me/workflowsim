@@ -10,7 +10,6 @@ import com.qiujie.core.WorkflowBroker;
 import com.qiujie.planner.HEFTPlanner;
 import com.qiujie.util.ExperimentUtil;
 import com.qiujie.util.Log;
-import com.qiujie.util.WorkflowParser;
 import org.cloudbus.cloudsim.Datacenter;
 import org.cloudbus.cloudsim.Vm;
 import org.cloudbus.cloudsim.core.CloudSim;
@@ -48,8 +47,8 @@ public class Example02 {
         List<Vm> vmList = ExperimentUtil.createVms(random, broker.getId());
         broker.submitGuestList(vmList);
         // submit workflows
-        List<Workflow> workflowList = daxList.stream().map(WorkflowParser::parse).toList();
-        broker.submitWorkflowList(workflowList);
+        List<Workflow> workflowList = ExperimentUtil.createWorkflow(daxList);
+        broker.submitWorkflow(workflowList);
         // start simulation
         CloudSim.startSimulation();
         List<Job> cloudletReceivedList = broker.getCloudletReceivedList();

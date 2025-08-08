@@ -1,8 +1,10 @@
 package com.qiujie.entity;
 
 import com.qiujie.Constants;
+import lombok.Data;
 import lombok.Getter;
 import lombok.Setter;
+import lombok.experimental.Accessors;
 import org.cloudbus.cloudsim.Cloudlet;
 import org.cloudbus.cloudsim.UtilizationModel;
 import org.cloudbus.cloudsim.UtilizationModelFull;
@@ -13,6 +15,8 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 
 @Getter
+@Setter
+@Accessors(chain = true)
 public class Job extends Cloudlet {
 
     private static final AtomicInteger nextId = new AtomicInteger(0);
@@ -33,20 +37,18 @@ public class Job extends Cloudlet {
     // the original length of job
     private long length; // MI
 
-    @Setter
+    private int depth;
+
     private double fileTransferTime;
 
     private int retryCount;
 
     private double elecCost;
 
-    @Setter
-    private int depth;
 
-    @Setter
+
     private Fv fv;
 
-    @Setter
     private Vm vm;
 
     private Job(int cloudletId, long length, int pesNumber, long cloudletFileSize, long cloudletOutputSize, UtilizationModel utilizationModelCpu, UtilizationModel utilizationModelRam, UtilizationModel utilizationModelBw, boolean record) {

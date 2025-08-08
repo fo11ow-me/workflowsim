@@ -44,7 +44,7 @@ public class WorkflowBroker extends DatacenterBroker {
     }
 
 
-    public void submitWorkflowList(List<Workflow> workflowList) {
+    public void submitWorkflow(List<Workflow> workflowList) {
         this.workflowList.addAll(workflowList);
     }
 

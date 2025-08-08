@@ -5,6 +5,7 @@ import cn.hutool.core.io.FileUtil;
 import cn.hutool.core.io.IORuntimeException;
 import cn.hutool.core.io.IoUtil;
 import cn.hutool.json.*;
+import com.qiujie.core.WorkflowBroker;
 import com.qiujie.entity.Freq2Power;
 import com.qiujie.entity.Cpu;
 import com.qiujie.core.DvfsCloudletSchedulerSpaceShared;
@@ -26,6 +27,7 @@ import org.knowm.xchart.XYChart;
 import org.knowm.xchart.XYChartBuilder;
 import org.knowm.xchart.style.Styler;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.math.BigDecimal;
@@ -37,23 +39,6 @@ import static com.qiujie.Constants.*;
 
 @Slf4j
 public class ExperimentUtil {
-
-    public static List<Cpu> getCpuList() {
-        try (InputStream inputStream = ClassLoader.getSystemClassLoader().getResourceAsStream("cpu.json")) {
-            if (inputStream == null) {
-                throw new IORuntimeException("Unable to find cpu.json file");
-            }
-            String jsonStr = IoUtil.readUtf8(inputStream);
-            JSONArray array = JSONUtil.parseArray(jsonStr);
-            List<Cpu> list = JSONUtil.toList(array, Cpu.class);
-            list.forEach(cpu ->
-                    cpu.getFreq2PowerList().sort(Comparator.comparingDouble(Freq2Power::getFrequency).reversed())
-            );
-            return list;
-        } catch (IOException e) {
-            throw new IORuntimeException("Failed to read cpu.json", e);
-        }
-    }
 
 
     public static List<Datacenter> createDatacenters() throws Exception {
@@ -84,9 +69,10 @@ public class ExperimentUtil {
      */
     public static List<Vm> createVms(final ContinuousDistribution random, int userId) {
         List<Vm> list = new ArrayList<>();
+        List<Cpu> cpuList = RedisUtil.getObject("cpu:list", ArrayList.class);
         //create VMs
         for (int i = 0; i < VMS; i++) {
-            Cpu cpu = getRandomElement(random, CPU_LIST);
+            Cpu cpu = getRandomElement(random, cpuList);
             DvfsVm vm = new DvfsVm(i, userId, cpu.getMips(), cpu.getPes(), cpu.getFrequency(), VM_RAM, VM_BW, VM_SIZE, VMM, new DvfsCloudletSchedulerSpaceShared(random));
             vm.setCpu(cpu.getName());
             List<Fv> fvList = new ArrayList<>();
@@ -106,6 +92,43 @@ public class ExperimentUtil {
             list.add(vm);
         }
         return list;
+    }
+
+
+    public static Workflow createWorkflow(String name) {
+        Dax dax = RedisUtil.getObject(name, Dax.class);
+        Map<String, Job> jobMap = new HashMap<>();
+        for (Dax.Job daxJob : dax.getJobList()) {
+            Job job = new Job(daxJob.getName(), daxJob.getLength()).setDepth(daxJob.getDepth());
+            for (Dax.File daxFile : daxJob.getLocalInputFileList()) {
+                job.getLocalInputFileList().add(new com.qiujie.entity.File(daxFile.getName(), daxFile.getSize()));
+            }
+            for (Dax.File daxFile : daxJob.getOutputFileList()) {
+                job.getOutputFileList().add(new com.qiujie.entity.File(daxFile.getName(), daxFile.getSize()));
+            }
+            jobMap.put(daxJob.getName(), job);
+        }
+        for (Dax.Job daxJob : dax.getJobList()) {
+            Job job = jobMap.get(daxJob.getName());
+            for (Map.Entry<String, List<Dax.File>> entry : daxJob.getPredInputFilesMap().entrySet()) {
+                List<com.qiujie.entity.File> fileList = entry.getValue().stream().map(daxFile -> new com.qiujie.entity.File(daxFile.getName(), daxFile.getSize())).toList();
+                job.getPredInputFilesMap().put(jobMap.get(entry.getKey()), fileList);
+            }
+            List<Job> parentList = daxJob.getParentList().stream().map(jobMap::get).toList();
+            List<Job> childList = daxJob.getChildList().stream().map(jobMap::get).toList();
+            job.getParentList().addAll(parentList);
+            job.getChildList().addAll(childList);
+        }
+        return new Workflow(name, new ArrayList<>(jobMap.values()));
+    }
+
+    public static List<Workflow> createWorkflow(List<String> list) {
+        List<Workflow> workflowList = new ArrayList<>();
+        for (String name : list) {
+            Workflow workflow = createWorkflow(name);
+            workflowList.add(workflow);
+        }
+        return workflowList;
     }
 
 
@@ -329,5 +352,15 @@ public class ExperimentUtil {
         }
 
         return prefix.toString();
+    }
+
+
+    public static String getFilenameNoExt(File file) {
+        String filename = file.getName();
+        int lastDotIndex = filename.lastIndexOf('.');
+        if (lastDotIndex == -1) {
+            return filename;
+        }
+        return filename.substring(0, lastDotIndex);
     }
 }
