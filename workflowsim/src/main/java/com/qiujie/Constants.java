@@ -2,14 +2,11 @@ package com.qiujie;
 
 import ch.qos.logback.classic.Level;
 import com.qiujie.comparator.*;
-import com.qiujie.entity.Cpu;
 import com.qiujie.enums.JobSequenceStrategyEnum;
 import generator.app.*;
 
 import java.io.File;
 import java.util.List;
-
-import static com.qiujie.util.ExperimentUtil.getCpuList;
 
 public class Constants {
 
@@ -17,12 +14,10 @@ public class Constants {
     public static final String DAX_DIR = System.getProperty("user.dir") + File.separator + "data" + File.separator + "dax" + File.separator;
     public static final String SIM_DIR = System.getProperty("user.dir") + File.separator + "data" + File.separator + "sim" + File.separator;
     public static final String EXPERIMENT_DIR = System.getProperty("user.dir") + File.separator + "data" + File.separator + "experiment" + File.separator;
-    public static final String PARAM_DIR = System.getProperty("user.dir") + File.separator + "tmp" + File.separator + "param" + File.separator;
-    public static final String RESULT_DIR = System.getProperty("user.dir") + File.separator + "tmp" + File.separator + "result" + File.separator;
 
     public static final int RESERVED_CORES = 4;  // Number of CPU cores to reserve for system tasks
-    public static final int SIM_TIMEOUT_MINUTES = 20; // Timeout for each simulation in minutes
-    public static final int BATCH_SIZE = 1000;
+    public static final int SIM_TIMEOUT_MINUTES = 5; // Timeout for each simulation in minutes
+    public static final int BATCH_SIZE = 100;
 
     public static final Level LEVEL = Level.ERROR;
 
@@ -67,8 +62,6 @@ public class Constants {
     public static final int HOST_RAM = 4096; // MEGA
     public static final long HOST_BW = 10000;
     public static final long HOST_STORAGE = 1000000; // MEGA
-
-    public static final List<Cpu> CPU_LIST = getCpuList();
 
     public static int VMS = 200;
     public static final int VM_RAM = 512; // MEGA

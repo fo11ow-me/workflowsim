@@ -9,7 +9,6 @@ import com.qiujie.core.WorkflowBroker;
 import com.qiujie.planner.RandomPlanner;
 import com.qiujie.util.ExperimentUtil;
 import com.qiujie.util.Log;
-import com.qiujie.util.WorkflowParser;
 import org.cloudbus.cloudsim.Datacenter;
 import org.cloudbus.cloudsim.Vm;
 import org.cloudbus.cloudsim.core.CloudSim;
@@ -47,7 +46,7 @@ public class Example01 {
         List<Vm> vmList = ExperimentUtil.createVms(random, broker.getId());
         broker.submitGuestList(vmList);
         // submit workflows
-        Workflow workflow = WorkflowParser.parse(dax);
+        Workflow workflow = ExperimentUtil.createWorkflow(dax);
         broker.submitWorkflow(workflow);
         // start simulation
         CloudSim.startSimulation();

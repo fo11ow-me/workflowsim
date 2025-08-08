@@ -3,13 +3,14 @@ package com.qiujie.entity;
 import lombok.Data;
 import lombok.experimental.Accessors;
 
+import java.io.Serializable;
 import java.util.List;
 import java.util.Objects;
 
 @Data
 @Accessors(chain = true)
-public class Result {
-    private int simIdx;
+public class Result implements Serializable {
+    private int id;
     private String name;
     private String workflowComparator;
     private boolean ascending;
@@ -33,11 +34,11 @@ public class Result {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         Result result = (Result) o;
-        return simIdx == result.simIdx;
+        return id == result.id;
     }
 
     @Override
     public int hashCode() {
-        return Objects.hashCode(simIdx);
+        return Objects.hashCode(id);
     }
 }

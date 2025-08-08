@@ -1,19 +1,21 @@
 package com.qiujie.starter;
 
 import ch.qos.logback.classic.Level;
+import cn.hutool.Hutool;
 import cn.hutool.core.io.FileUtil;
 import cn.hutool.json.JSONUtil;
+import com.esotericsoftware.kryo.Kryo;
+import com.esotericsoftware.kryo.io.Input;
+import com.esotericsoftware.kryo.io.Output;
 import com.qiujie.entity.Result;
 import com.qiujie.entity.SimParam;
+import com.qiujie.util.KryoUtil;
 import lombok.AccessLevel;
 import lombok.Setter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.BufferedWriter;
-import java.io.File;
-import java.io.FileWriter;
-import java.io.IOException;
+import java.io.*;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.*;
@@ -57,8 +59,6 @@ public abstract class ExperimentStarter {
     private void createDirs() {
         FileUtil.mkdir(EXPERIMENT_DIR);
         FileUtil.mkdir(SIM_DIR);
-        FileUtil.mkdir(PARAM_DIR);
-        FileUtil.mkdir(RESULT_DIR);
     }
 
     protected abstract void addParams();
@@ -77,8 +77,6 @@ public abstract class ExperimentStarter {
 
         String javaPath = System.getProperty("java.home") + "/bin/java";
         String classPath = System.getProperty("java.class.path");
-        String paramPath = PARAM_DIR + name + ".json";
-        FileUtil.writeUtf8String(JSONUtil.toJsonPrettyStr(paramList), paramPath);
 
         AtomicInteger counter = new AtomicInteger();
         ExecutorService executor = Executors.newFixedThreadPool(maxConcurrent);
@@ -88,41 +86,48 @@ public abstract class ExperimentStarter {
         Thread writerThread = createWriterThread(resultQueue, executor);
 
         // Submit simulation tasks (producers)
-        for (int i = 0; i < totalSims; i++) {
-            int simIdx = i;
+        for (SimParam simParam : paramList) {
             executor.submit(() -> {
+                int id = simParam.getId();
                 ProcessBuilder pb = new ProcessBuilder(
                         javaPath,
                         "-Xms512m",
                         "-Xmx1g",
                         "-XX:+EnableDynamicAgentLoading",
                         "-Dstartup.class=" + name,
-                        "-Dsim.idx=" + simIdx,
+                        "-Dsim.id=" + id,
                         "-cp", classPath,
                         SimStarter.class.getName(),
-                        String.valueOf(level.levelInt),
-                        paramPath
+                        String.valueOf(level.levelInt)
                 );
                 try {
                     Process process = pb.start();
+                    Kryo kryo = KryoUtil.getInstance();
+                    try (Output output = new Output(process.getOutputStream())) {
+                        kryo.writeObject(output, simParam);
+                        output.flush();
+                    }
                     boolean finished = process.waitFor(SIM_TIMEOUT_MINUTES, TimeUnit.MINUTES);
                     if (!finished) {
                         process.destroyForcibly();
-                        log.error("❌  Sim {} timed out and was forcibly terminated", simIdx);
-                    } else if (process.exitValue() != 0) {
-                        log.error("❌  Sim {} failed", simIdx);
+                        log.error("❌  Sim {} timed out and was forcibly terminated", id);
                     } else {
-                        Result result = getResult(simIdx);
-                        resultQueue.put(result); // Put result in queue (thread-safe blocking)
+                        if (process.exitValue() == 0) {
+                            try (Input input = new Input(process.getInputStream())) {
+                                Result result = kryo.readObject(input, Result.class);
+                                resultQueue.put(result);
+                            }
+                        } else {
+                            log.error("❌  Sim {} failed", id);
+                        }
                     }
                 } catch (Exception e) {
-                    log.error("❌  Failed to start sim {}", simIdx, e);
+                    log.error("❌  Failed to start sim {}", id, e);
                 } finally {
                     int count = counter.incrementAndGet();
                     if (count == 1 || count == totalSims || count % progressStep == 0) {
                         log.info("✅  Progress: {}% ({} / {})", count * 100.0 / totalSims, count, totalSims);
                     }
-                    // After all tasks finish, put poison pill to signal writer thread to stop
                     if (count == totalSims) {
                         try {
                             resultQueue.put(POISON_PILL);
@@ -147,10 +152,6 @@ public abstract class ExperimentStarter {
 
     /**
      * Create a thread to write results to file from the queue
-     *
-     * @param resultQueue
-     * @param executor
-     * @return
      */
     private Thread createWriterThread(BlockingQueue<Result> resultQueue, ExecutorService executor) {
         Thread writerThread = new Thread(() -> {
@@ -184,18 +185,8 @@ public abstract class ExperimentStarter {
         return writerThread;
     }
 
-    private Result getResult(int simIdx) {
-        File file = new File(RESULT_DIR + name + "_" + simIdx + ".json");
-        Result result = null;
-        try {
-            String json = FileUtil.readUtf8String(file);
-            result = JSONUtil.toBean(json, Result.class);
-        } catch (Exception e) {
-            log.error("❌  Failed to read result file {}", file.getName(), e);
-        }
-        file.delete();
-        return result;
-    }
+
+
 
     private void writeBatch(BufferedWriter writer, List<Result> batch) throws IOException {
         for (Result r : batch) {
@@ -205,4 +196,5 @@ public abstract class ExperimentStarter {
         }
         writer.flush();
     }
+
 }

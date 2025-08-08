@@ -12,16 +12,16 @@
     <property name="LOG_DIR" value="log"/>
     <!-- Property for startup class name, with a default value -->
     <property name="STARTUP_CLASS" value="${startup.class:-default}"/>
-    <property name="SIM_IDX" value="${sim.idx:-#}"/>
+    <property name="SIM_ID" value="${sim.id:-#}"/>
 
     <!-- Rolling file appender to write logs to files with daily rolling -->
     <appender name="FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
         <!-- Log file path -->
-        <file>${LOG_DIR}/${STARTUP_CLASS}/${SIM_IDX}.log</file>
+        <file>${LOG_DIR}/${STARTUP_CLASS}/${SIM_ID}.log</file>
         <!-- Rolling policy: roll log files based on date -->
         <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
             <!-- Pattern for rolled files, keeps logs per day -->
-            <fileNamePattern>${LOG_DIR}/${STARTUP_CLASS}/${SIM_IDX}_%d{yyyy-MM-dd}.log</fileNamePattern>
+            <fileNamePattern>${LOG_DIR}/${STARTUP_CLASS}/${SIM_ID}_%d{yyyy-MM-dd}.log</fileNamePattern>
             <!-- Keep logs for 30 days -->
             <maxHistory>30</maxHistory>
         </rollingPolicy>

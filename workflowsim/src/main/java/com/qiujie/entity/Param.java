@@ -3,17 +3,18 @@ package com.qiujie.entity;
 import com.qiujie.comparator.WorkflowComparatorInterface;
 import com.qiujie.enums.JobSequenceStrategyEnum;
 import com.qiujie.util.ExperimentUtil;
+import lombok.Data;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.experimental.Accessors;
 
+import java.io.Serializable;
+
 import static com.qiujie.Constants.*;
 
-@Setter
-@Getter
+@Data
 @Accessors(chain = true)
-@NoArgsConstructor
 public class Param {
     // Default parameter values from Constants
     private String workflowComparator = WORKFLOW_COMPARATOR.getName();

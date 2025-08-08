@@ -10,7 +10,6 @@ import com.qiujie.core.WorkflowBroker;
 import com.qiujie.planner.HEFTPlanner;
 import com.qiujie.util.ExperimentUtil;
 import com.qiujie.util.Log;
-import com.qiujie.util.WorkflowParser;
 import org.cloudbus.cloudsim.Datacenter;
 import org.cloudbus.cloudsim.Vm;
 import org.cloudbus.cloudsim.core.CloudSim;
@@ -32,7 +31,7 @@ public class Example03 {
         ContinuousDistribution random = new UniformDistr(0, 1, send);
         ClockModifier.modifyClockMethod();
         org.cloudbus.cloudsim.Log.disable();
-        CloudSim.init(2, Calendar.getInstance(), TRACE_FLAG,MIN_TIME_BETWEEN_EVENTS);
+        CloudSim.init(2, Calendar.getInstance(), TRACE_FLAG, MIN_TIME_BETWEEN_EVENTS);
         Log.setLevel(Level.TRACE);
         List<String> daxList = List.of(
                 "Montage_100",
@@ -53,14 +52,14 @@ public class Example03 {
         WorkflowBroker broker = new WorkflowBroker(random, new HEFTPlanner(random, new Param()));
         List<Vm> vmList = ExperimentUtil.createVms(random, broker.getId());
         broker.submitGuestList(vmList);
-        List<Workflow> workflowList = daxList.stream().map(WorkflowParser::parse).toList();
-        broker.submitWorkflowList(workflowList);
+        List<Workflow> workflowList = ExperimentUtil.createWorkflow(daxList);
+        broker.submitWorkflow(workflowList);
 
         WorkflowBroker broker1 = new WorkflowBroker(random, new HEFTPlanner(random, new Param()));
         List<Vm> vmList1 = ExperimentUtil.createVms(random, broker1.getId());
         broker1.submitGuestList(vmList1);
-        List<Workflow> workflowList1 = daxList1.stream().map(WorkflowParser::parse).toList();
-        broker1.submitWorkflowList(workflowList1);
+        List<Workflow> workflowList1 = ExperimentUtil.createWorkflow(daxList1);
+        broker1.submitWorkflow(workflowList1);
 
         CloudSim.startSimulation();
 
