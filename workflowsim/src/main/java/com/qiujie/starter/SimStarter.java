@@ -1,15 +1,17 @@
 package com.qiujie.starter;
 
 import ch.qos.logback.classic.Level;
-import cn.hutool.core.io.FileUtil;
 import cn.hutool.json.JSONUtil;
+import com.esotericsoftware.kryo.Kryo;
+import com.esotericsoftware.kryo.io.Input;
+import com.esotericsoftware.kryo.io.Output;
 import com.qiujie.aop.ClockModifier;
 import com.qiujie.entity.*;
 import com.qiujie.core.WorkflowBroker;
 import com.qiujie.planner.WorkflowPlannerAbstract;
 import com.qiujie.util.ExperimentUtil;
+import com.qiujie.util.KryoUtil;
 import com.qiujie.util.Log;
-import com.qiujie.util.WorkflowParser;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.cloudbus.cloudsim.Vm;
@@ -17,9 +19,10 @@ import org.cloudbus.cloudsim.core.CloudSim;
 import org.cloudbus.cloudsim.distributions.ContinuousDistribution;
 import org.cloudbus.cloudsim.distributions.UniformDistr;
 
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.lang.reflect.Constructor;
 import java.util.*;
-import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.qiujie.Constants.*;
 
@@ -27,7 +30,6 @@ import static com.qiujie.Constants.*;
 @Slf4j
 public class SimStarter {
 
-    private final int simIdx;
     private final String name;
     private final String experimentName;
     private final ContinuousDistribution random;
@@ -36,8 +38,7 @@ public class SimStarter {
     @Getter
     private Result result;
 
-    private SimStarter(int simIdx, String experimentName, SimParam simParam) throws Exception {
-        this.simIdx = simIdx;
+    private SimStarter(String experimentName, SimParam simParam) throws Exception {
         this.experimentName = experimentName;
         this.simParam = simParam;
         this.random = new UniformDistr(0, 1, simParam.getSeed());
@@ -49,10 +50,8 @@ public class SimStarter {
         start();
     }
 
-    private static final AtomicInteger uid = new AtomicInteger(-1);
-
     public SimStarter(SimParam simParam) throws Exception {
-        this(uid.getAndDecrement(), "", simParam);
+        this("", simParam);
     }
 
     public void start() throws Exception {
@@ -78,8 +77,8 @@ public class SimStarter {
         List<Vm> vmList = ExperimentUtil.createVms(random, broker.getId());
         broker.submitGuestList(vmList);
         // submit workflows
-        List<Workflow> workflowList = simParam.getDaxList().stream().map(WorkflowParser::parse).toList();
-        broker.submitWorkflowList(workflowList);
+        List<Workflow> workflowList = ExperimentUtil.createWorkflow(simParam.getDaxList());
+        broker.submitWorkflow(workflowList);
         // start simulation
         CloudSim.startSimulation();
         if (broker.getCloudletReceivedList().isEmpty()) {
@@ -88,7 +87,7 @@ public class SimStarter {
         setResult(broker);
         ExperimentUtil.printSimResult(broker.getCloudletReceivedList(), planner.toString());
         if (ENABLE_SIM_DATA) {
-            ExperimentUtil.generateSimData(broker.getCloudletReceivedList(), experimentName + "_" + simIdx + "_" + planner);
+            ExperimentUtil.generateSimData(broker.getCloudletReceivedList(), experimentName + "_" + simParam.getId() + "_" + planner);
         }
     }
 
@@ -96,7 +95,7 @@ public class SimStarter {
         int finishedCloudlets = broker.getCloudletReceivedList().size();
         int totalCloudlets = broker.getWorkflowList().stream().mapToInt(Workflow::getJobNum).sum();
         this.result = new Result()
-                .setSimIdx(simIdx)
+                .setId(simParam.getId())
                 .setName(name)
                 .setWorkflowComparator(ExperimentUtil.getPrefixFromClassName(simParam.getParam().getWorkflowComparator()))
                 .setAscending(simParam.getParam().isAscending())
@@ -117,22 +116,30 @@ public class SimStarter {
 
 
     public static void main(String[] args) {
+        int exitCode = 0;
         try {
+
             int logLevel = Integer.parseInt(args[0]);
             Log.setLevel(Level.toLevel(logLevel));
-            String paramPath = args[1];
-            int simIdx = Integer.parseInt(System.getProperty("sim.idx"));
+            Kryo kryo = KryoUtil.getInstance();
+            SimParam simParam;
+            try(Input input = new Input(System.in)){
+                 simParam = kryo.readObject(input, SimParam.class);
+            }
+
             String experimentName = System.getProperty("startup.class");
-            String json = FileUtil.readUtf8String(paramPath);
-            List<SimParam> paramList = JSONUtil.toList(json, SimParam.class);
-            SimParam simParam = paramList.get(simIdx);
-            SimStarter starter = new SimStarter(simIdx, experimentName, simParam);
-            String resultPath = RESULT_DIR + experimentName + "_" + simIdx + ".json";
-            FileUtil.writeUtf8String(JSONUtil.toJsonPrettyStr(starter.getResult()), resultPath);
-            System.exit(0);
+            SimStarter starter = new SimStarter(experimentName, simParam);
+
+            try (Output output = new Output(System.out)) {
+                kryo.writeObject(output, starter.getResult());
+                output.flush();
+            }
+
         } catch (Exception e) {
             log.error("❌  Sim failed", e);
-            System.exit(1);
+            exitCode = 1;
+        } finally {
+            System.exit(exitCode);
         }
     }
 }
