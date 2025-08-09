@@ -1,15 +1,10 @@
 package com.qiujie.starter;
 
 import ch.qos.logback.classic.Level;
-import cn.hutool.Hutool;
 import cn.hutool.core.io.FileUtil;
 import cn.hutool.json.JSONUtil;
-import com.esotericsoftware.kryo.Kryo;
-import com.esotericsoftware.kryo.io.Input;
-import com.esotericsoftware.kryo.io.Output;
 import com.qiujie.entity.Result;
 import com.qiujie.entity.SimParam;
-import com.qiujie.util.KryoUtil;
 import lombok.AccessLevel;
 import lombok.Setter;
 import org.slf4j.Logger;
@@ -69,8 +64,8 @@ public abstract class ExperimentStarter {
 
 
     private void startSimProcesses() {
-        int totalSims = paramList.size();
-        int progressStep = (int) Math.max(1, Math.sqrt(totalSims));
+        int size = paramList.size();
+        int progressStep = (int) Math.max(1, Math.sqrt(size));
         int availableCores = Runtime.getRuntime().availableProcessors();
         int maxConcurrent = Math.max(1, availableCores - RESERVED_CORES);
         log.info("🖥️  Detected CPU cores: {}, setting max concurrent processes: {}", availableCores, maxConcurrent);
@@ -81,11 +76,9 @@ public abstract class ExperimentStarter {
         AtomicInteger counter = new AtomicInteger();
         ExecutorService executor = Executors.newFixedThreadPool(maxConcurrent);
 
-        // Writer thread (consumer) writes results to file from the queue
         BlockingQueue<Result> resultQueue = new LinkedBlockingQueue<>();
-        Thread writerThread = createWriterThread(resultQueue, executor);
+        Thread resultWriter = createResultWriter(resultQueue, progressStep);
 
-        // Submit simulation tasks (producers)
         for (SimParam simParam : paramList) {
             executor.submit(() -> {
                 int id = simParam.getId();
@@ -98,37 +91,48 @@ public abstract class ExperimentStarter {
                         "-Dsim.id=" + id,
                         "-cp", classPath,
                         SimStarter.class.getName(),
-                        String.valueOf(level.levelInt)
+                        String.valueOf(level.levelInt),
+                        JSONUtil.toJsonStr(simParam)
                 );
                 try {
                     Process process = pb.start();
-                    Kryo kryo = KryoUtil.getInstance();
-                    try (Output output = new Output(process.getOutputStream())) {
-                        kryo.writeObject(output, simParam);
-                        output.flush();
-                    }
+                    BlockingQueue<Result> resultHolder = new ArrayBlockingQueue<>(1);
+                    Thread resultReader = new Thread(() -> {
+                        try (ObjectInputStream input = new ObjectInputStream(process.getInputStream())) {
+                            Result result = (Result) input.readObject();
+                            resultHolder.put(result);
+                        } catch (Exception e) {
+                            log.error("❌ Sim {} outputReader failed", id, e);
+                        }
+                    });
+                    resultReader.start();
                     boolean finished = process.waitFor(SIM_TIMEOUT_MINUTES, TimeUnit.MINUTES);
                     if (!finished) {
+                        log.error("❌ Sim {} timed out, forcibly terminating process", id);
                         process.destroyForcibly();
-                        log.error("❌  Sim {} timed out and was forcibly terminated", id);
                     } else {
-                        if (process.exitValue() == 0) {
-                            try (Input input = new Input(process.getInputStream())) {
-                                Result result = kryo.readObject(input, Result.class);
-                                resultQueue.put(result);
-                            }
-                        } else {
-                            log.error("❌  Sim {} failed", id);
+                        int exitCode = process.exitValue();
+                        if (exitCode != 0) {
+                            log.error("❌ Sim {} failed", id);
                         }
                     }
+                    resultReader.join();
+                    Result result = resultHolder.poll();
+
+                    if (result != null) {
+                        resultQueue.put(result);
+                    } else {
+                        log.error("❌ Sim {} finished but no result read", id);
+                    }
+
                 } catch (Exception e) {
-                    log.error("❌  Failed to start sim {}", id, e);
+                    log.error("❌ Sim {} execution error", id, e);
                 } finally {
                     int count = counter.incrementAndGet();
-                    if (count == 1 || count == totalSims || count % progressStep == 0) {
-                        log.info("✅  Progress: {}% ({} / {})", count * 100.0 / totalSims, count, totalSims);
+                    if (count == 1 || count == size || count % progressStep == 0) {
+                        log.info("✅ Progress: {}% ({} / {})", count * 100.0 / size, count, size);
                     }
-                    if (count == totalSims) {
+                    if (count == size) {
                         try {
                             resultQueue.put(POISON_PILL);
                         } catch (InterruptedException e) {
@@ -141,11 +145,14 @@ public abstract class ExperimentStarter {
 
         executor.shutdown();
         try {
-            executor.awaitTermination(Long.MAX_VALUE, TimeUnit.NANOSECONDS);
-            writerThread.join();
+            boolean terminated = executor.awaitTermination(Long.MAX_VALUE, TimeUnit.NANOSECONDS);
+            if (!terminated) {
+                log.error("❌ ExecutorService did not terminate within timeout");
+            }
+            resultWriter.join();
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
-            log.error("❌  Interrupted while waiting for completion", e);
+            log.error("❌ Interrupted while waiting for executor or writer thread", e);
         }
     }
 
@@ -153,39 +160,32 @@ public abstract class ExperimentStarter {
     /**
      * Create a thread to write results to file from the queue
      */
-    private Thread createWriterThread(BlockingQueue<Result> resultQueue, ExecutorService executor) {
-        Thread writerThread = new Thread(() -> {
+    private Thread createResultWriter(BlockingQueue<Result> resultQueue, int progressStep) {
+        Thread resultWriter = new Thread(() -> {
             try (BufferedWriter writer = new BufferedWriter(new FileWriter(EXPERIMENT_DIR + name + ".jsonl", false))) {
                 List<Result> batch = new ArrayList<>();
                 while (true) {
-                    Result result = resultQueue.poll(1, TimeUnit.SECONDS);
-                    if (result == null) {
-                        // Timeout: check if all tasks finished and queue is empty
-                        if (executor.isTerminated() && resultQueue.isEmpty()) break;
-                        continue;
+                    Result result = resultQueue.take();
+                    if (result == POISON_PILL) {
+                        break;
                     }
-                    if (result == POISON_PILL) break;
-
                     batch.add(result);
-                    if (batch.size() >= BATCH_SIZE) {
+                    if (batch.size() >=  progressStep) {
                         writeBatch(writer, batch);
                         batch.clear();
                     }
                 }
-                // Write remaining results
                 if (!batch.isEmpty()) {
                     writeBatch(writer, batch);
-                    batch.clear();
                 }
             } catch (IOException | InterruptedException e) {
-                log.error("❌  Failed to write results", e);
+                log.error("❌ Writer thread failed to write results", e);
+                Thread.currentThread().interrupt();
             }
         });
-        writerThread.start();
-        return writerThread;
+        resultWriter.start();
+        return resultWriter;
     }
-
-
 
 
     private void writeBatch(BufferedWriter writer, List<Result> batch) throws IOException {

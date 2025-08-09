@@ -2,15 +2,11 @@ package com.qiujie.starter;
 
 import ch.qos.logback.classic.Level;
 import cn.hutool.json.JSONUtil;
-import com.esotericsoftware.kryo.Kryo;
-import com.esotericsoftware.kryo.io.Input;
-import com.esotericsoftware.kryo.io.Output;
 import com.qiujie.aop.ClockModifier;
 import com.qiujie.entity.*;
 import com.qiujie.core.WorkflowBroker;
 import com.qiujie.planner.WorkflowPlannerAbstract;
 import com.qiujie.util.ExperimentUtil;
-import com.qiujie.util.KryoUtil;
 import com.qiujie.util.Log;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
@@ -19,7 +15,6 @@ import org.cloudbus.cloudsim.core.CloudSim;
 import org.cloudbus.cloudsim.distributions.ContinuousDistribution;
 import org.cloudbus.cloudsim.distributions.UniformDistr;
 
-import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.lang.reflect.Constructor;
 import java.util.*;
@@ -118,23 +113,15 @@ public class SimStarter {
     public static void main(String[] args) {
         int exitCode = 0;
         try {
-
             int logLevel = Integer.parseInt(args[0]);
             Log.setLevel(Level.toLevel(logLevel));
-            Kryo kryo = KryoUtil.getInstance();
-            SimParam simParam;
-            try(Input input = new Input(System.in)){
-                 simParam = kryo.readObject(input, SimParam.class);
-            }
-
+            SimParam simParam = JSONUtil.toBean(args[1], SimParam.class);
             String experimentName = System.getProperty("startup.class");
             SimStarter starter = new SimStarter(experimentName, simParam);
-
-            try (Output output = new Output(System.out)) {
-                kryo.writeObject(output, starter.getResult());
-                output.flush();
+            try (ObjectOutputStream out = new ObjectOutputStream(System.out)) {
+                out.writeObject(starter.getResult());
+                out.flush();
             }
-
         } catch (Exception e) {
             log.error("❌  Sim failed", e);
             exitCode = 1;
