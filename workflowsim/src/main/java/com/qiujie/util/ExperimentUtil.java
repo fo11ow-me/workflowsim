@@ -40,6 +40,23 @@ import static com.qiujie.Constants.*;
 @Slf4j
 public class ExperimentUtil {
 
+    public static List<Cpu> getCpuList() {
+        try (InputStream inputStream = ClassLoader.getSystemClassLoader().getResourceAsStream("cpu.json")) {
+            if (inputStream == null) {
+                throw new IORuntimeException("Unable to find cpu.json file");
+            }
+            String jsonStr = IoUtil.readUtf8(inputStream);
+            JSONArray array = JSONUtil.parseArray(jsonStr);
+            List<Cpu> list = JSONUtil.toList(array, Cpu.class);
+            list.forEach(cpu ->
+                    cpu.getFreq2PowerList().sort(Comparator.comparingDouble(Freq2Power::getFrequency).reversed())
+            );
+            return list;
+        } catch (IOException e) {
+            throw new IORuntimeException("Failed to read cpu.json", e);
+        }
+    }
+
 
     public static List<Datacenter> createDatacenters() throws Exception {
         List<Datacenter> list = new ArrayList<>();
@@ -69,7 +86,7 @@ public class ExperimentUtil {
      */
     public static List<Vm> createVms(final ContinuousDistribution random, int userId) {
         List<Vm> list = new ArrayList<>();
-        List<Cpu> cpuList = RedisUtil.getObject("cpu:list", ArrayList.class);
+        List<Cpu> cpuList = getCpuList();
         //create VMs
         for (int i = 0; i < VMS; i++) {
             Cpu cpu = getRandomElement(random, cpuList);
@@ -96,30 +113,7 @@ public class ExperimentUtil {
 
 
     public static Workflow createWorkflow(String name) {
-        Dax dax = RedisUtil.getObject(name, Dax.class);
-        Map<String, Job> jobMap = new HashMap<>();
-        for (Dax.Job daxJob : dax.getJobList()) {
-            Job job = new Job(daxJob.getName(), daxJob.getLength()).setDepth(daxJob.getDepth());
-            for (Dax.File daxFile : daxJob.getLocalInputFileList()) {
-                job.getLocalInputFileList().add(new com.qiujie.entity.File(daxFile.getName(), daxFile.getSize()));
-            }
-            for (Dax.File daxFile : daxJob.getOutputFileList()) {
-                job.getOutputFileList().add(new com.qiujie.entity.File(daxFile.getName(), daxFile.getSize()));
-            }
-            jobMap.put(daxJob.getName(), job);
-        }
-        for (Dax.Job daxJob : dax.getJobList()) {
-            Job job = jobMap.get(daxJob.getName());
-            for (Map.Entry<String, List<Dax.File>> entry : daxJob.getPredInputFilesMap().entrySet()) {
-                List<com.qiujie.entity.File> fileList = entry.getValue().stream().map(daxFile -> new com.qiujie.entity.File(daxFile.getName(), daxFile.getSize())).toList();
-                job.getPredInputFilesMap().put(jobMap.get(entry.getKey()), fileList);
-            }
-            List<Job> parentList = daxJob.getParentList().stream().map(jobMap::get).toList();
-            List<Job> childList = daxJob.getChildList().stream().map(jobMap::get).toList();
-            job.getParentList().addAll(parentList);
-            job.getChildList().addAll(childList);
-        }
-        return new Workflow(name, new ArrayList<>(jobMap.values()));
+        return WorkflowParser.parse(name);
     }
 
     public static List<Workflow> createWorkflow(List<String> list) {

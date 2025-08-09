@@ -17,7 +17,7 @@ public class Constants {
 
     public static final int RESERVED_CORES = 4;  // Number of CPU cores to reserve for system tasks
     public static final int SIM_TIMEOUT_MINUTES = 5; // Timeout for each simulation in minutes
-    public static final int BATCH_SIZE = 100;
+    public static final int BATCH_SIZE = 1000;
 
     public static final Level LEVEL = Level.ERROR;
 
