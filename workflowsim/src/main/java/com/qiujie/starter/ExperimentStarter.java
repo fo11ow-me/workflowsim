@@ -25,7 +25,7 @@ public abstract class ExperimentStarter {
     @Setter(AccessLevel.PROTECTED)
     private Level level;
     private final List<SimParam> paramList;
-    private static final Result POISON_PILL = new Result(); // End marker for queue
+    private final Result POISON_PILL = new Result(); // End marker for queue
 
     public ExperimentStarter() {
         this.name = getClass().getSimpleName();
@@ -52,7 +52,7 @@ public abstract class ExperimentStarter {
     }
 
     private void createDirs() {
-        FileUtil.mkdir(EXPERIMENT_DIR);
+        FileUtil.mkdir(RESULT_DIR);
         FileUtil.mkdir(SIM_DIR);
     }
 
@@ -78,7 +78,7 @@ public abstract class ExperimentStarter {
 
         BlockingQueue<Result> resultQueue = new LinkedBlockingQueue<>();
         Thread resultWriter = createResultWriter(resultQueue, progressStep);
-
+        resultWriter.start();
         for (SimParam simParam : paramList) {
             executor.submit(() -> {
                 int id = simParam.getId();
@@ -97,14 +97,7 @@ public abstract class ExperimentStarter {
                 try {
                     Process process = pb.start();
                     BlockingQueue<Result> resultHolder = new ArrayBlockingQueue<>(1);
-                    Thread resultReader = new Thread(() -> {
-                        try (ObjectInputStream input = new ObjectInputStream(process.getInputStream())) {
-                            Result result = (Result) input.readObject();
-                            resultHolder.put(result);
-                        } catch (Exception e) {
-                            log.error("❌ Sim {} outputReader failed", id, e);
-                        }
-                    });
+                    Thread resultReader = createResultReader(process, resultHolder, id);
                     resultReader.start();
                     boolean finished = process.waitFor(SIM_TIMEOUT_MINUTES, TimeUnit.MINUTES);
                     if (!finished) {
@@ -157,12 +150,24 @@ public abstract class ExperimentStarter {
     }
 
 
+    private Thread createResultReader(Process process, BlockingQueue<Result> resultHolder, int id) {
+        return new Thread(() -> {
+            try (ObjectInputStream input = new ObjectInputStream(process.getInputStream())) {
+                Result result = (Result) input.readObject();
+                resultHolder.put(result);
+            } catch (Exception e) {
+                log.error("❌  Failed to read sim {} result", id, e);
+            }
+        });
+    }
+
+
     /**
      * Create a thread to write results to file from the queue
      */
-    private Thread createResultWriter(BlockingQueue<Result> resultQueue, int progressStep) {
-        Thread resultWriter = new Thread(() -> {
-            try (BufferedWriter writer = new BufferedWriter(new FileWriter(EXPERIMENT_DIR + name + ".jsonl", false))) {
+    private Thread createResultWriter(BlockingQueue<Result> resultQueue, int batchSize) {
+        return new Thread(() -> {
+            try (BufferedWriter writer = new BufferedWriter(new FileWriter(RESULT_DIR + name + ".jsonl", false))) {
                 List<Result> batch = new ArrayList<>();
                 while (true) {
                     Result result = resultQueue.take();
@@ -170,7 +175,7 @@ public abstract class ExperimentStarter {
                         break;
                     }
                     batch.add(result);
-                    if (batch.size() >=  progressStep) {
+                    if (batch.size() >= batchSize) {
                         writeBatch(writer, batch);
                         batch.clear();
                     }
@@ -179,12 +184,10 @@ public abstract class ExperimentStarter {
                     writeBatch(writer, batch);
                 }
             } catch (IOException | InterruptedException e) {
-                log.error("❌ Writer thread failed to write results", e);
+                log.error("❌  Failed to write results", e);
                 Thread.currentThread().interrupt();
             }
         });
-        resultWriter.start();
-        return resultWriter;
     }
 
 
