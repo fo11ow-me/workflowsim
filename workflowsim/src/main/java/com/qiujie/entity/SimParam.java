@@ -11,7 +11,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 @Data
 @NoArgsConstructor
-public class SimParam {
+public class SimParam implements Serializable {
 
     private static final AtomicInteger nextId = new AtomicInteger(0);
     private int id;

@@ -15,7 +15,7 @@ import static com.qiujie.Constants.*;
 
 @Data
 @Accessors(chain = true)
-public class Param {
+public class Param implements Serializable {
     // Default parameter values from Constants
     private String workflowComparator = WORKFLOW_COMPARATOR.getName();
     private boolean ascending = ASCENDING;
@@ -28,7 +28,6 @@ public class Param {
     /**
      * Hutool — specifically, the `JSONUtil.toBean(...)` method — does not call your custom `setWorkflowComparator(Class<?>)` method because:
      * It is a regular method (not a standard JavaBean setter), and Hutool's deserialization mechanism only calls standard JavaBean-style setters like `setXxx(String)`, or it directly sets the field via reflection.
-     *
      */
     public Param setWorkflowComparator(Class<? extends WorkflowComparatorInterface> workflowComparator) {
         return setWorkflowComparator(workflowComparator.getName());

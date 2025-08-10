@@ -4,7 +4,7 @@ from src.util import anova
 
 class Main(unittest.TestCase):
     def setUp(self):
-        self.base_path = "..\\..\\data\\experiment\\"
+        self.base_path = "..\\..\\data\\result\\"
         self.output_dir = "..\\..\\data\\anova"
 
     def test_two_way_anova(self):

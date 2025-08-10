@@ -2,16 +2,14 @@ package com.qiujie.util;
 
 import cn.hutool.core.date.DateUtil;
 import cn.hutool.core.io.FileUtil;
-import cn.hutool.core.io.IORuntimeException;
-import cn.hutool.core.io.IoUtil;
 import cn.hutool.json.*;
-import com.qiujie.core.WorkflowBroker;
 import com.qiujie.entity.Freq2Power;
 import com.qiujie.entity.Cpu;
 import com.qiujie.core.DvfsCloudletSchedulerSpaceShared;
 import com.qiujie.core.WorkflowDatacenter;
 import com.qiujie.entity.*;
 import com.qiujie.entity.Job;
+import com.qiujie.entity.Dax;
 import io.bretty.console.table.Alignment;
 import io.bretty.console.table.ColumnFormatter;
 import io.bretty.console.table.Precision;
@@ -28,8 +26,6 @@ import org.knowm.xchart.XYChartBuilder;
 import org.knowm.xchart.style.Styler;
 
 import java.io.File;
-import java.io.IOException;
-import java.io.InputStream;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.*;
@@ -39,24 +35,6 @@ import static com.qiujie.Constants.*;
 
 @Slf4j
 public class ExperimentUtil {
-
-    public static List<Cpu> getCpuList() {
-        try (InputStream inputStream = ClassLoader.getSystemClassLoader().getResourceAsStream("cpu.json")) {
-            if (inputStream == null) {
-                throw new IORuntimeException("Unable to find cpu.json file");
-            }
-            String jsonStr = IoUtil.readUtf8(inputStream);
-            JSONArray array = JSONUtil.parseArray(jsonStr);
-            List<Cpu> list = JSONUtil.toList(array, Cpu.class);
-            list.forEach(cpu ->
-                    cpu.getFreq2PowerList().sort(Comparator.comparingDouble(Freq2Power::getFrequency).reversed())
-            );
-            return list;
-        } catch (IOException e) {
-            throw new IORuntimeException("Failed to read cpu.json", e);
-        }
-    }
-
 
     public static List<Datacenter> createDatacenters() throws Exception {
         List<Datacenter> list = new ArrayList<>();
@@ -86,7 +64,7 @@ public class ExperimentUtil {
      */
     public static List<Vm> createVms(final ContinuousDistribution random, int userId) {
         List<Vm> list = new ArrayList<>();
-        List<Cpu> cpuList = getCpuList();
+        List<Cpu> cpuList = RedisUtil.getObject("cpu:list", ArrayList.class);
         //create VMs
         for (int i = 0; i < VMS; i++) {
             Cpu cpu = getRandomElement(random, cpuList);
@@ -113,7 +91,30 @@ public class ExperimentUtil {
 
 
     public static Workflow createWorkflow(String name) {
-        return WorkflowParser.parse(name);
+        Dax dax = RedisUtil.getObject(name, Dax.class);
+        Map<String, Job> jobMap = new HashMap<>();
+        for (Dax.Job daxJob : dax.getJobList()) {
+            Job job = new Job(daxJob.getName(), daxJob.getLength()).setDepth(daxJob.getDepth());
+            for (Dax.File daxFile : daxJob.getLocalInputFileList()) {
+                job.getLocalInputFileList().add(new com.qiujie.entity.File(daxFile.getName(), daxFile.getSize()));
+            }
+            for (Dax.File daxFile : daxJob.getOutputFileList()) {
+                job.getOutputFileList().add(new com.qiujie.entity.File(daxFile.getName(), daxFile.getSize()));
+            }
+            jobMap.put(daxJob.getName(), job);
+        }
+        for (Dax.Job daxJob : dax.getJobList()) {
+            Job job = jobMap.get(daxJob.getName());
+            for (Map.Entry<String, List<Dax.File>> entry : daxJob.getPredInputFilesMap().entrySet()) {
+                List<com.qiujie.entity.File> fileList = entry.getValue().stream().map(daxFile -> new com.qiujie.entity.File(daxFile.getName(), daxFile.getSize())).toList();
+                job.getPredInputFilesMap().put(jobMap.get(entry.getKey()), fileList);
+            }
+            List<Job> parentList = daxJob.getParentList().stream().map(jobMap::get).toList();
+            List<Job> childList = daxJob.getChildList().stream().map(jobMap::get).toList();
+            job.getParentList().addAll(parentList);
+            job.getChildList().addAll(childList);
+        }
+        return new Workflow(name, new ArrayList<>(jobMap.values()));
     }
 
     public static List<Workflow> createWorkflow(List<String> list) {
@@ -204,7 +205,7 @@ public class ExperimentUtil {
 
     public static void generateExperimentData(List<Result> list, String str) {
         String jsonStr = JSONUtil.toJsonPrettyStr(list);
-        String path = EXPERIMENT_DIR + str + ".json";
+        String path = RESULT_DIR + str + ".json";
         FileUtil.writeUtf8String(jsonStr, path);
     }
 

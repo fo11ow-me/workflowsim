@@ -13,7 +13,7 @@ public class Constants {
 
     public static final String DAX_DIR = System.getProperty("user.dir") + File.separator + "data" + File.separator + "dax" + File.separator;
     public static final String SIM_DIR = System.getProperty("user.dir") + File.separator + "data" + File.separator + "sim" + File.separator;
-    public static final String EXPERIMENT_DIR = System.getProperty("user.dir") + File.separator + "data" + File.separator + "experiment" + File.separator;
+    public static final String RESULT_DIR = System.getProperty("user.dir") + File.separator + "data" + File.separator + "result" + File.separator;
 
     public static final int RESERVED_CORES = 4;  // Number of CPU cores to reserve for system tasks
     public static final int SIM_TIMEOUT_MINUTES = 5; // Timeout for each simulation in minutes
