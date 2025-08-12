@@ -19,10 +19,15 @@ import static com.qiujie.Constants.DAX_DIR;
 
 public class DataLoader {
     public static void main(String[] args) {
+        upload();
+    }
+
+
+    public static void upload() {
+        RedisUtil.flushDB();
         uploadCpus();
         uploadDaxs();
     }
-
 
     private static void uploadCpus() {
         RedisUtil.setObject("cpu:list", getCpus());
