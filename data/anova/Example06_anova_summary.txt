@@ -1,0 +1,11 @@
+ANOVA Summary for Example06
+Timestamp: 2025-08-10 16:46:11
+Analysis Type: Multi-Way ANOVA
+Target Variable: RPD
+Grouping Variables: workflowComparator, ascending
+
+                                    sum_sq    df             F    PR(>F)
+workflowComparator            1.107001e-28   3.0  6.423747e-31  1.000000
+ascending                     2.341931e-30   1.0  4.076952e-32  1.000000
+workflowComparator:ascending  4.102109e+01   3.0  2.380387e-01  0.869166
+Residual                      1.838182e+03  32.0           NaN       NaN

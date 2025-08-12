@@ -4,7 +4,6 @@
     "pes": 1,
     "mips": 1100,
     "frequency": 2.2,
-    "tdp": 35,
     "freq2PowerList": [
       { "frequency": 1.4, "power": 13 },
       { "frequency": 1.6, "power": 18 },
@@ -18,7 +17,6 @@
     "pes": 1,
     "mips": 1100,
     "frequency": 2.2,
-    "tdp": 89,
     "freq2PowerList": [
       { "frequency": 1.4, "power": 15 },
       { "frequency": 1.6, "power": 21 },
@@ -32,7 +30,6 @@
     "pes": 1,
     "mips": 1200,
     "frequency": 2.4,
-    "tdp": 89,
     "freq2PowerList": [
       { "frequency": 1.6, "power": 22 },
       { "frequency": 1.8, "power": 32 },
@@ -46,7 +43,6 @@
     "pes": 1,
     "mips": 1100,
     "frequency": 2.2,
-    "tdp": 25,
     "freq2PowerList": [
       { "frequency": 1.4, "power": 11 },
       { "frequency": 1.6, "power": 15 },
@@ -60,7 +56,6 @@
     "pes": 1,
     "mips": 1000,
     "frequency": 2.0,
-    "tdp": 62,
     "freq2PowerList": [
       { "frequency": 1.2, "power": 10 },
       { "frequency": 1.4, "power": 14 },

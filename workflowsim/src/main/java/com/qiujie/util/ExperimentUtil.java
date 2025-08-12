@@ -64,7 +64,7 @@ public class ExperimentUtil {
      */
     public static List<Vm> createVms(final ContinuousDistribution random, int userId) {
         List<Vm> list = new ArrayList<>();
-        List<Cpu> cpuList = RedisUtil.getObject("cpu:list", ArrayList.class);
+        List<Cpu> cpuList = RedisUtil.getObject("cpu:list");
         //create VMs
         for (int i = 0; i < VMS; i++) {
             Cpu cpu = getRandomElement(random, cpuList);
@@ -91,7 +91,7 @@ public class ExperimentUtil {
 
 
     public static Workflow createWorkflow(String name) {
-        Dax dax = RedisUtil.getObject(name, Dax.class);
+        Dax dax = RedisUtil.getObject(name);
         Map<String, Job> jobMap = new HashMap<>();
         for (Dax.Job daxJob : dax.getJobList()) {
             Job job = new Job(daxJob.getName(), daxJob.getLength()).setDepth(daxJob.getDepth());
@@ -120,8 +120,7 @@ public class ExperimentUtil {
     public static List<Workflow> createWorkflow(List<String> list) {
         List<Workflow> workflowList = new ArrayList<>();
         for (String name : list) {
-            Workflow workflow = createWorkflow(name);
-            workflowList.add(workflow);
+            workflowList.add(createWorkflow(name));
         }
         return workflowList;
     }
@@ -358,4 +357,12 @@ public class ExperimentUtil {
         }
         return filename.substring(0, lastDotIndex);
     }
+
+
+    public static String removeLeadingControlChars(String str) {
+        if (str == null) return null;
+
+        return str.replaceFirst("^[\\x00-\\x1F\\x7F]+", "");
+    }
+
 }

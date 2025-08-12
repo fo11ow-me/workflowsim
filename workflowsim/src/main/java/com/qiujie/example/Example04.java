@@ -7,6 +7,7 @@ import com.qiujie.comparator.JobNumComparator;
 import com.qiujie.comparator.LengthComparator;
 import com.qiujie.aop.ClockModifier;
 import com.qiujie.entity.Param;
+import com.qiujie.entity.Result;
 import com.qiujie.entity.SimParam;
 import com.qiujie.planner.RandomPlanner;
 import com.qiujie.starter.SimStarter;
@@ -37,14 +38,15 @@ public class Example04 {
                 "Genome_50",
                 "Montage_100");
         VMS = 50;
-        SimStarter simStarter = new SimStarter(new SimParam(seed, daxList, RandomPlanner.class, new Param().setWorkflowComparator(DepthComparator.class).setAscending(true)));
+        SimStarter simStarter = new SimStarter();
+        Result result = simStarter.start(new SimParam(seed, daxList, RandomPlanner.class, new Param().setWorkflowComparator(DepthComparator.class).setAscending(true)));
 //        Log.setLevel(Level.OFF);
-        SimStarter simStarter1 = new SimStarter(new SimParam(seed, daxList, RandomPlanner.class, new Param().setWorkflowComparator(LengthComparator.class).setAscending(true)));
-        SimStarter simStarter2 = new SimStarter(new SimParam(seed, daxList, HEFTPlanner.class, new Param().setWorkflowComparator(LengthComparator.class).setAscending(false)));
-        SimStarter simStarter3 = new SimStarter(new SimParam(seed, daxList, HEFTPlanner.class, new Param().setWorkflowComparator(JobNumComparator.class).setAscending(false)));
-        List<SimStarter> simStarterList = List.of(simStarter, simStarter1, simStarter2, simStarter3);
-        ExperimentUtil.printExperimentResult(simStarterList.stream().map(SimStarter::getResult).toList());
-        ExperimentUtil.generateExperimentData(simStarterList.stream().map(SimStarter::getResult).toList(), name);
+        Result result1 = simStarter.start(new SimParam(seed, daxList, RandomPlanner.class, new Param().setWorkflowComparator(LengthComparator.class).setAscending(true)));
+        Result result2 = simStarter.start(new SimParam(seed, daxList, HEFTPlanner.class, new Param().setWorkflowComparator(LengthComparator.class).setAscending(false)));
+        Result result3 = simStarter.start(new SimParam(seed, daxList, HEFTPlanner.class, new Param().setWorkflowComparator(JobNumComparator.class).setAscending(false)));
+        List<Result> resultList = List.of(result, result1, result2, result3);
+        ExperimentUtil.printExperimentResult(resultList);
+        ExperimentUtil.generateExperimentData(resultList, name);
         System.out.println(name + " take " + (System.currentTimeMillis() - seed) / 1000.0 + "s");
     }
 }

@@ -15,7 +15,7 @@ import static com.qiujie.Constants.*;
 
 @Data
 @Accessors(chain = true)
-public class Param implements Serializable {
+public class Param  implements Serializable{
     // Default parameter values from Constants
     private String workflowComparator = WORKFLOW_COMPARATOR.getName();
     private boolean ascending = ASCENDING;
