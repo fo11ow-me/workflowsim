@@ -2,7 +2,7 @@ package com.qiujie.entity;
 
 import com.qiujie.planner.WorkflowPlannerAbstract;
 import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.experimental.Accessors;
 
 import java.io.Serializable;
 import java.util.ArrayList;
@@ -10,7 +10,7 @@ import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
 @Data
-@NoArgsConstructor
+@Accessors(chain = true)
 public class SimParam implements Serializable {
 
     private static final AtomicInteger nextId = new AtomicInteger(0);
@@ -20,10 +20,17 @@ public class SimParam implements Serializable {
     private String plannerClass;
     private Param param;
 
-    public SimParam(long seed, List<String> daxList, Class<? extends WorkflowPlannerAbstract> plannerClass, Param param) {
+    public static final SimParam POISON_PILL = new SimParam().setId(-1);
+
+    public SimParam() {
         this.id = nextId.getAndIncrement();
+        this.daxList = new ArrayList<>();
+    }
+
+    public SimParam(long seed, List<String> daxList, Class<? extends WorkflowPlannerAbstract> plannerClass, Param param) {
+        this();
         this.seed = seed;
-        this.daxList = new ArrayList<>(daxList);
+        this.daxList.addAll(daxList);
         this.plannerClass = plannerClass.getName();
         this.param = param;
     }
@@ -37,10 +44,14 @@ public class SimParam implements Serializable {
      * single workflow
      */
     public SimParam(long seed, String daxPath, Class<? extends WorkflowPlannerAbstract> plannerClass, Param param) {
-        this(seed, List.of(daxPath), plannerClass, param);
+        this();
+        this.seed = seed;
+        this.daxList.add(daxPath);
+        this.plannerClass = plannerClass.getName();
+        this.param = param;
     }
 
     public SimParam(long seed, String daxPath, Class<? extends WorkflowPlannerAbstract> plannerClass) {
-        this(seed, List.of(daxPath), plannerClass, new Param());
+        this(seed, daxPath, plannerClass, new Param());
     }
 }
