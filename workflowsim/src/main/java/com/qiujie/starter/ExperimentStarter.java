@@ -25,7 +25,6 @@ public abstract class ExperimentStarter {
     @Setter(AccessLevel.PROTECTED)
     private Level level;
     private final List<SimParam> paramList;
-    private final Result POISON_PILL = new Result(); // End marker for queue
 
     public ExperimentStarter() {
         this.name = getClass().getSimpleName();
@@ -42,7 +41,7 @@ public abstract class ExperimentStarter {
         run();
         long end = System.currentTimeMillis();
         double runtime = (end - seed) / 1000.0;
-        log.info("{}: Finished in {}s", name, runtime);
+        log.info("{}: Finished in {}s\n", name, runtime);
     }
 
     private void run() {
@@ -73,63 +72,63 @@ public abstract class ExperimentStarter {
         String javaPath = System.getProperty("java.home") + "/bin/java";
         String classPath = System.getProperty("java.class.path");
 
-        AtomicInteger counter = new AtomicInteger();
+        // Manage the idle process processes with a blocking queue
+        List<SimProcess> processList = new CopyOnWriteArrayList<>();
+        BlockingQueue<SimProcess> processPool = new ArrayBlockingQueue<>(maxConcurrent);
+
+        // Initialize the process pool
+        for (int i = 0; i < maxConcurrent; i++) {
+            try {
+                SimProcess simProcess = new SimProcess(javaPath, classPath, name, level);
+                processList.add(simProcess);
+                processPool.put(simProcess);
+            } catch (IOException | InterruptedException e) {
+                log.error("❌  Failed to start SimProcess", e);
+                Thread.currentThread().interrupt();
+            }
+        }
+
+        Thread monitorThread = new Thread(new ProcessMonitor(processList, processPool, maxConcurrent, javaPath, classPath, name, level, log));
+        monitorThread.setDaemon(true);
+        monitorThread.start();
+
         ExecutorService executor = Executors.newFixedThreadPool(maxConcurrent);
+        AtomicInteger counter = new AtomicInteger();
 
         BlockingQueue<Result> resultQueue = new LinkedBlockingQueue<>();
-        Thread resultWriter = createResultWriter(resultQueue, progressStep);
-        resultWriter.start();
+        Thread writerThread = createWriterThread(resultQueue);
+        writerThread.start();
+
+
         for (SimParam simParam : paramList) {
             executor.submit(() -> {
-                int id = simParam.getId();
-                ProcessBuilder pb = new ProcessBuilder(
-                        javaPath,
-                        "-Xms512m",
-                        "-Xmx1g",
-                        "-XX:+EnableDynamicAgentLoading",
-                        "-Dstartup.class=" + name,
-                        "-Dsim.id=" + id,
-                        "-cp", classPath,
-                        SimStarter.class.getName(),
-                        String.valueOf(level.levelInt),
-                        JSONUtil.toJsonStr(simParam)
-                );
+                SimProcess simProcess = null;
                 try {
-                    Process process = pb.start();
-                    BlockingQueue<Result> resultHolder = new ArrayBlockingQueue<>(1);
-                    Thread resultReader = createResultReader(process, resultHolder, id);
-                    resultReader.start();
-                    boolean finished = process.waitFor(SIM_TIMEOUT_MINUTES, TimeUnit.MINUTES);
-                    if (!finished) {
-                        log.error("❌ Sim {} timed out, forcibly terminating process", id);
-                        process.destroyForcibly();
-                    } else {
-                        int exitCode = process.exitValue();
-                        if (exitCode != 0) {
-                            log.error("❌ Sim {} failed", id);
-                        }
+                    // Take an available process from the pool, blocking if none is free
+                    simProcess = processPool.take();
+                    Result result = simProcess.run(simParam);
+                    if (result == null) {
+                        throw new IllegalStateException("Receiving null result");
                     }
-                    resultReader.join();
-                    Result result = resultHolder.poll();
-
-                    if (result != null) {
-                        resultQueue.put(result);
-                    } else {
-                        log.error("❌ Sim {} finished but no result read", id);
+                    if (result.equals(Result.POISON_PILL)) {
+                        throw new IllegalStateException("Receiving Poison pill");
                     }
-
+                    resultQueue.put(result);
                 } catch (Exception e) {
-                    log.error("❌ Sim {} execution error", id, e);
+                    log.error("❌ Sim {} failed", simParam, e);
                 } finally {
+                    // log progress
                     int count = counter.incrementAndGet();
                     if (count == 1 || count == size || count % progressStep == 0) {
-                        log.info("✅ Progress: {}% ({} / {})", count * 100.0 / size, count, size);
+                        log.info("✅  Progress: {}% ({} / {})", count * 100.0 / size, count, size);
                     }
-                    if (count == size) {
+                    // Return the process to the pool after the simulation is done
+                    if (simProcess != null && simProcess.isAlive()) {
                         try {
-                            resultQueue.put(POISON_PILL);
+                            processPool.put(simProcess);
                         } catch (InterruptedException e) {
                             Thread.currentThread().interrupt();
+                            log.error("❌ Interrupted returning worker to pool", e);
                         }
                     }
                 }
@@ -138,44 +137,42 @@ public abstract class ExperimentStarter {
 
         executor.shutdown();
         try {
-            boolean terminated = executor.awaitTermination(Long.MAX_VALUE, TimeUnit.NANOSECONDS);
-            if (!terminated) {
-                log.error("❌ ExecutorService did not terminate within timeout");
+
+            executor.awaitTermination(Long.MAX_VALUE, TimeUnit.NANOSECONDS);
+
+            monitorThread.interrupt();
+            monitorThread.join();
+
+            // After all simulations are completed, close all processes
+            for (SimProcess simProcess : processList) {
+                simProcess.sendPoisonPillAndClose();
             }
-            resultWriter.join();
+
+            // close writer thread
+            resultQueue.put(Result.POISON_PILL);
+            writerThread.join();
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             log.error("❌ Interrupted while waiting for executor or writer thread", e);
         }
-    }
 
-
-    private Thread createResultReader(Process process, BlockingQueue<Result> resultHolder, int id) {
-        return new Thread(() -> {
-            try (ObjectInputStream input = new ObjectInputStream(process.getInputStream())) {
-                Result result = (Result) input.readObject();
-                resultHolder.put(result);
-            } catch (Exception e) {
-                log.error("❌  Failed to read sim {} result", id, e);
-            }
-        });
     }
 
 
     /**
      * Create a thread to write results to file from the queue
      */
-    private Thread createResultWriter(BlockingQueue<Result> resultQueue, int batchSize) {
+    private Thread createWriterThread(BlockingQueue<Result> resultQueue) {
         return new Thread(() -> {
             try (BufferedWriter writer = new BufferedWriter(new FileWriter(RESULT_DIR + name + ".jsonl", false))) {
                 List<Result> batch = new ArrayList<>();
                 while (true) {
                     Result result = resultQueue.take();
-                    if (result == POISON_PILL) {
+                    if (result.equals(Result.POISON_PILL)) {
                         break;
                     }
                     batch.add(result);
-                    if (batch.size() >= batchSize) {
+                    if (batch.size() >= BATCH_SIZE) {
                         writeBatch(writer, batch);
                         batch.clear();
                     }
