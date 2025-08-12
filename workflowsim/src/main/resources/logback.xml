@@ -1,67 +1,52 @@
 <configuration>
-    <!-- Console appender for logging to the console -->
-    <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
-        <encoder>
-            <!-- Log pattern including timestamp, thread, level, logger name, and message -->
-            <pattern>%d{HH:mm:ss.SSS} [%thread] %highlight(%-5level) %cyan(%logger{15}) - %msg%n
-            </pattern>
-        </encoder>
-    </appender>
-
-    <!-- Property specifying the directory for log files -->
     <property name="LOG_DIR" value="log"/>
-    <!-- Property for startup class name, with a default value -->
     <property name="STARTUP_CLASS" value="${startup.class:-default}"/>
-    <property name="SIM_ID" value="${sim.id:-#}"/>
 
-    <!-- Rolling file appender to write logs to files with daily rolling -->
-    <appender name="FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
-        <!-- Log file path -->
-        <file>${LOG_DIR}/${STARTUP_CLASS}/${SIM_ID}.log</file>
-        <!-- Rolling policy: roll log files based on date -->
-        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
-            <!-- Pattern for rolled files, keeps logs per day -->
-            <fileNamePattern>${LOG_DIR}/${STARTUP_CLASS}/${SIM_ID}_%d{yyyy-MM-dd}.log</fileNamePattern>
-            <!-- Keep logs for 30 days -->
-            <maxHistory>30</maxHistory>
-        </rollingPolicy>
+    <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
+<!--        <target>System.err</target>-->
         <encoder>
-            <!-- Log pattern for file logs -->
-            <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n</pattern>
+            <pattern>%d{HH:mm:ss.SSS} [%thread] %highlight(%-5level) %cyan(%logger{15}) - %msg%n</pattern>
         </encoder>
     </appender>
 
-    <!-- Async appender for console (STDOUT) -->
+    <!--    MDC  -->
+    <appender name="SIFT" class="ch.qos.logback.classic.sift.SiftingAppender">
+        <discriminator class="ch.qos.logback.classic.sift.MDCBasedDiscriminator">
+            <key>sim.id</key>
+            <defaultValue>#</defaultValue>
+        </discriminator>
+        <sift>
+            <appender name="FILE-${sim.id}" class="ch.qos.logback.core.rolling.RollingFileAppender">
+                <file>${LOG_DIR}/${STARTUP_CLASS}/${sim.id}.log</file>
+                <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+                    <fileNamePattern>${LOG_DIR}/${STARTUP_CLASS}/${sim.id}_%d{yyyy-MM-dd}.log</fileNamePattern>
+                    <maxHistory>30</maxHistory>
+                </rollingPolicy>
+                <encoder>
+                    <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n</pattern>
+                </encoder>
+            </appender>
+        </sift>
+    </appender>
+
     <appender name="ASYNC_STDOUT" class="ch.qos.logback.classic.AsyncAppender">
-        <!-- Size of the internal queue to buffer logging events -->
         <queueSize>10000</queueSize>
-        <!-- Threshold for discarding low-priority logs when queue is full (0 means never discard) -->
         <discardingThreshold>0</discardingThreshold>
-        <!-- If true, never block the caller thread when the queue is full -->
         <neverBlock>true</neverBlock>
-        <!-- Reference wrapped appender for console -->
         <appender-ref ref="STDOUT"/>
     </appender>
 
-    <!-- Async appender for file (FILE) -->
-    <appender name="ASYNC_FILE" class="ch.qos.logback.classic.AsyncAppender">
-        <!-- Size of the internal queue to buffer logging events -->
+    <appender name="ASYNC_SIFT" class="ch.qos.logback.classic.AsyncAppender">
         <queueSize>10000</queueSize>
-        <!-- Threshold for discarding low-priority logs when queue is full (0 means never discard) -->
         <discardingThreshold>0</discardingThreshold>
-        <!-- If true, never block the caller thread when the queue is full -->
         <neverBlock>true</neverBlock>
-        <!-- Reference wrapped appender for file -->
-        <appender-ref ref="FILE"/>
+        <appender-ref ref="SIFT"/>
     </appender>
 
-    <!-- Enable JVM shutdown hook to flush and close appenders gracefully -->
     <shutdownHook/>
 
-    <!--    Root logger configuration, logs at DEBUG level and outputs asynchronously to both STDOUT and FILE-->
     <root level="DEBUG">
         <appender-ref ref="ASYNC_STDOUT"/>
-        <appender-ref ref="ASYNC_FILE"/>
+        <appender-ref ref="ASYNC_SIFT"/>
     </root>
-
 </configuration>
