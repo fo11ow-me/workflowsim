@@ -1,20 +1,22 @@
 package com.qiujie.starter;
 
 import ch.qos.logback.classic.Level;
-import cn.hutool.json.JSONUtil;
+
 import com.qiujie.aop.ClockModifier;
 import com.qiujie.entity.*;
 import com.qiujie.core.WorkflowBroker;
 import com.qiujie.planner.WorkflowPlannerAbstract;
 import com.qiujie.util.ExperimentUtil;
 import com.qiujie.util.Log;
-import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.cloudbus.cloudsim.Vm;
 import org.cloudbus.cloudsim.core.CloudSim;
 import org.cloudbus.cloudsim.distributions.ContinuousDistribution;
 import org.cloudbus.cloudsim.distributions.UniformDistr;
+import org.slf4j.MDC;
 
+import java.io.IOException;
+import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.lang.reflect.Constructor;
 import java.util.*;
@@ -25,43 +27,43 @@ import static com.qiujie.Constants.*;
 @Slf4j
 public class SimStarter {
 
+
     private final String name;
-    private final String experimentName;
-    private final ContinuousDistribution random;
-    private final WorkflowPlannerAbstract planner;
-    private final SimParam simParam;
-    @Getter
-    private Result result;
 
-    private SimStarter(String experimentName, SimParam simParam) throws Exception {
-        this.experimentName = experimentName;
-        this.simParam = simParam;
-        this.random = new UniformDistr(0, 1, simParam.getSeed());
-        // init planner
-        Class<?> plannerClass = Class.forName(simParam.getPlannerClass());
-        Constructor<?> constructor = plannerClass.getDeclaredConstructor(ContinuousDistribution.class, Param.class);
-        this.planner = (WorkflowPlannerAbstract) constructor.newInstance(random, simParam.getParam());
-        this.name = planner.toString();
-        start();
-    }
-
-    public SimStarter(SimParam simParam) throws Exception {
-        this("", simParam);
-    }
-
-    public void start() throws Exception {
-        log.info("{}: Starting...", name);
-        long start = System.currentTimeMillis();
-        run();
-        long end = System.currentTimeMillis();
-        double runtime = (end - start) / 1000.0;
-        log.info("{}: Finished in {}s\n", name, runtime);
-        result.setRuntime(runtime);
-    }
-
-    private void run() throws Exception {
+    private SimStarter(String name) {
+        this.name = name;
         ClockModifier.modifyClockMethod();
         org.cloudbus.cloudsim.Log.disable();
+    }
+
+    public SimStarter() {
+        this("");
+    }
+
+
+    public Result start(SimParam simParam) {
+        MDC.put("sim.id", String.valueOf(simParam.getId()));
+        try {
+            ContinuousDistribution random = new UniformDistr(0, 1, simParam.getSeed());
+            Class<?> plannerClass = Class.forName(simParam.getPlannerClass());
+            Constructor<?> constructor = plannerClass.getDeclaredConstructor(ContinuousDistribution.class, Param.class);
+            WorkflowPlannerAbstract planner = (WorkflowPlannerAbstract) constructor.newInstance(random, simParam.getParam());
+            log.info("{}: Starting...", planner);
+            long startTime = System.currentTimeMillis();
+            WorkflowBroker broker = run(simParam, random, planner);
+            double runtime = (System.currentTimeMillis() - startTime) / 1000.0;
+            log.info("{}: Finished in {}s\n", planner, runtime);
+            return new Result(simParam, planner, broker, runtime);
+        } catch (Exception e) {
+            log.error("❌ Sim {} failed", simParam, e);
+            return null;
+        } finally {
+            MDC.remove("sim.id");
+        }
+    }
+
+
+    private WorkflowBroker run(SimParam simParam, ContinuousDistribution random, WorkflowPlannerAbstract planner) throws Exception {
         // init cloudsim
         CloudSim.init(USERS, Calendar.getInstance(), TRACE_FLAG, MIN_TIME_BETWEEN_EVENTS);
         // create datacenters
@@ -79,54 +81,37 @@ public class SimStarter {
         if (broker.getCloudletReceivedList().isEmpty()) {
             throw new IllegalStateException("No cloudlet received");
         }
-        setResult(broker);
         ExperimentUtil.printSimResult(broker.getCloudletReceivedList(), planner.toString());
         if (ENABLE_SIM_DATA) {
-            ExperimentUtil.generateSimData(broker.getCloudletReceivedList(), experimentName + "_" + simParam.getId() + "_" + planner);
+            ExperimentUtil.generateSimData(broker.getCloudletReceivedList(), name + "_" + simParam.getId() + "_" + planner);
         }
-    }
-
-    private void setResult(WorkflowBroker broker) {
-        int finishedCloudlets = broker.getCloudletReceivedList().size();
-        int totalCloudlets = broker.getWorkflowList().stream().mapToInt(Workflow::getJobNum).sum();
-        this.result = new Result()
-                .setId(simParam.getId())
-                .setName(name)
-                .setWorkflowComparator(ExperimentUtil.getPrefixFromClassName(simParam.getParam().getWorkflowComparator()))
-                .setAscending(simParam.getParam().isAscending())
-                .setDeadlineFactor(simParam.getParam().getDeadlineFactor())
-                .setReliabilityFactor(simParam.getParam().getReliabilityFactor())
-                .setJobSequenceStrategy(simParam.getParam().getJobSequenceStrategy().name())
-                .setNeighborhoodFactor(simParam.getParam().getNeighborhoodFactor())
-                .setSlackTimeFactor(simParam.getParam().getSlackTimeFactor())
-                .setDaxList(new ArrayList<>(simParam.getDaxList()))
-                .setCompletionDetail(String.format("%.2f%% (%d / %d)", finishedCloudlets * 100.0 / totalCloudlets, finishedCloudlets, totalCloudlets))
-                .setElecCost(broker.getCloudletReceivedList().stream().mapToDouble(cloudlet -> ((Job) cloudlet).getElecCost()).sum())
-                .setFinishTime(broker.getCloudletReceivedList().getLast().getExecFinishTime())
-                .setRetryCount(broker.getCloudletReceivedList().stream().mapToInt(cloudlet -> ((Job) cloudlet).getRetryCount()).sum())
-                .setOverdueCount((int) broker.getWorkflowList().stream().filter(Workflow::isOverdue).count())
-                .setPlnRuntime(planner.getRuntime());
-
+        return broker;
     }
 
 
     public static void main(String[] args) {
-        int exitCode = 0;
-        try {
-            int logLevel = Integer.parseInt(args[0]);
-            Log.setLevel(Level.toLevel(logLevel));
-            SimParam simParam = JSONUtil.toBean(args[1], SimParam.class);
-            String experimentName = System.getProperty("startup.class");
-            SimStarter starter = new SimStarter(experimentName, simParam);
-            try (ObjectOutputStream out = new ObjectOutputStream(System.out)) {
-                out.writeObject(starter.getResult());
-                out.flush();
+        Log.setLevel(Level.toLevel(Integer.parseInt(args[0])));
+        SimStarter starter = new SimStarter(System.getProperty("startup.class"));
+        try (ObjectOutputStream output = new ObjectOutputStream(System.out); ObjectInputStream input = new ObjectInputStream(System.in)) {
+            output.flush();
+            while (true) {
+                SimParam simParam = (SimParam) input.readObject();
+                if (simParam.equals(SimParam.POISON_PILL)) {
+                    output.writeObject(Result.POISON_PILL);
+                    output.flush();
+                    break;
+                }
+                Result result = starter.start(simParam);
+                if (result != null) {
+                    output.writeObject(result);
+                    output.flush();
+                } else {
+                    output.writeObject(Result.POISON_PILL);
+                    output.flush();
+                }
             }
-        } catch (Exception e) {
-            log.error("❌  Sim failed", e);
-            exitCode = 1;
-        } finally {
-            System.exit(exitCode);
+        } catch (IOException | ClassNotFoundException e) {
+            log.error("❌  SimStarter failed", e);
         }
     }
 }
