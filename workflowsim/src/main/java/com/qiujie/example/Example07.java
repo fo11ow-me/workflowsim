@@ -18,7 +18,6 @@ import java.util.List;
  * algorithm comparison
  */
 public class Example07 extends ExperimentStarter {
-
     public static void main(String[] args) {
         new Example07();
     }

@@ -15,6 +15,7 @@ public class Constants {
     public static final String SIM_DIR = System.getProperty("user.dir") + File.separator + "data" + File.separator + "sim" + File.separator;
     public static final String RESULT_DIR = System.getProperty("user.dir") + File.separator + "data" + File.separator + "result" + File.separator;
 
+    // redis
     public static final String HOST = "localhost";
     public static final int PORT = 6379;
     public static final String PASSWORD = "123456";
@@ -22,7 +23,7 @@ public class Constants {
     public static final int RESERVED_CORES = 4;  // Number of CPU cores to reserve for system tasks
     public static final int PROC_TIMEOUT_SECONDS = 20; // Timeout for subProcess
     public static final int PROCESS_MONITOR_SLEEP_MS = 5000;
-    public static final int BATCH_SIZE = 1000;
+    public static final int BATCH_SIZE = 500;
 
     public static final Level LEVEL = Level.ERROR;
 
@@ -85,7 +86,7 @@ public class Constants {
     public static List<Class<? extends Application>> APP_LIST = List.of(Montage.class, Genome.class);
     public static List<Integer> JOB_NUM_LIST = List.of(50, 100, 200, 400);
     public static int INSTANCE_NUM = 5;
-    public static final int REPEAT_TIMES = 5;
+    public static int REPEAT_TIMES = 5;
 
     //  List of parameter ranges
     public static final List<Class<? extends WorkflowComparatorInterface>> WORKFLOW_COMPARATOR_LIST = List.of(DefaultComparator.class, DepthComparator.class, JobNumComparator.class, LengthComparator.class);

@@ -8,6 +8,7 @@ import com.qiujie.entity.Param;
 import com.qiujie.entity.SimParam;
 import com.qiujie.planner.HEFTPlanner;
 import com.qiujie.starter.ExperimentStarter;
+import generator.app.Montage;
 
 import java.util.List;
 
@@ -26,11 +27,12 @@ public class Example06 extends ExperimentStarter {
 
     @Override
     protected void addParams() {
-        setLevel(Level.WARN);
         List<String> daxList = List.of(
                 "Genome_100"
                 , "Montage_50"
+                , "Montage_200"
         );
+        Constants.REPEAT_TIMES = 20;
         for (Class<? extends WorkflowComparatorInterface> workflowComparator : Constants.WORKFLOW_COMPARATOR_LIST) {
             for (Boolean ascending : Constants.ASCENDING_LIST) {
                 for (int i = 0; i < Constants.REPEAT_TIMES; i++) {
