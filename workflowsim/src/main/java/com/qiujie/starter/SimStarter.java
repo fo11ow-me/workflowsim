@@ -2,11 +2,15 @@ package com.qiujie.starter;
 
 import ch.qos.logback.classic.Level;
 
+import com.esotericsoftware.kryo.kryo5.Kryo;
+import com.esotericsoftware.kryo.kryo5.io.Input;
+import com.esotericsoftware.kryo.kryo5.io.Output;
 import com.qiujie.aop.ClockModifier;
 import com.qiujie.entity.*;
 import com.qiujie.core.WorkflowBroker;
 import com.qiujie.planner.WorkflowPlannerAbstract;
 import com.qiujie.util.ExperimentUtil;
+import com.qiujie.util.KryoUtil;
 import com.qiujie.util.Log;
 import lombok.extern.slf4j.Slf4j;
 import org.cloudbus.cloudsim.Vm;
@@ -15,9 +19,6 @@ import org.cloudbus.cloudsim.distributions.ContinuousDistribution;
 import org.cloudbus.cloudsim.distributions.UniformDistr;
 import org.slf4j.MDC;
 
-import java.io.IOException;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
 import java.lang.reflect.Constructor;
 import java.util.*;
 
@@ -45,8 +46,7 @@ public class SimStarter {
         MDC.put("sim.id", String.valueOf(simParam.getId()));
         try {
             ContinuousDistribution random = new UniformDistr(0, 1, simParam.getSeed());
-            Class<?> plannerClass = Class.forName(simParam.getPlannerClass());
-            Constructor<?> constructor = plannerClass.getDeclaredConstructor(ContinuousDistribution.class, Param.class);
+            Constructor<?> constructor = simParam.getPlannerClass().getDeclaredConstructor(ContinuousDistribution.class, Param.class);
             WorkflowPlannerAbstract planner = (WorkflowPlannerAbstract) constructor.newInstance(random, simParam.getParam());
             log.info("{}: Starting...", planner);
             long startTime = System.currentTimeMillis();
@@ -92,26 +92,24 @@ public class SimStarter {
     public static void main(String[] args) {
         Log.setLevel(Level.toLevel(Integer.parseInt(args[0])));
         SimStarter starter = new SimStarter(System.getProperty("startup.class"));
-        try (ObjectOutputStream output = new ObjectOutputStream(System.out); ObjectInputStream input = new ObjectInputStream(System.in)) {
-            output.flush();
+        Kryo kryo = KryoUtil.getInstance();
+        try (Output output = new Output(System.out); Input input = new Input(System.in)) {
             while (true) {
-                SimParam simParam = (SimParam) input.readObject();
+                SimParam simParam = kryo.readObject(input, SimParam.class);
                 if (simParam.equals(SimParam.POISON_PILL)) {
-                    output.writeObject(Result.POISON_PILL);
+                    kryo.writeObject(output, Result.POISON_PILL);
                     output.flush();
                     break;
                 }
                 Result result = starter.start(simParam);
                 if (result != null) {
-                    output.writeObject(result);
+                    kryo.writeObject(output, result);
                     output.flush();
                 } else {
-                    output.writeObject(Result.POISON_PILL);
+                    kryo.writeObject(output, Result.POISON_PILL);
                     output.flush();
                 }
             }
-        } catch (IOException | ClassNotFoundException e) {
-            log.error("❌  SimStarter failed", e);
         }
     }
 }
