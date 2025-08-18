@@ -28,11 +28,11 @@
 
 - Support parallel simulation
 
-![](./assets/README-1752635029470.png)
+![](./assets/README-1755499171192.png)
 
 - Support multi-factor ANOVA
 
-![](./assets/README-1752651015875.png)
+![](./assets/README-1755499322365.png)
 
 
 
