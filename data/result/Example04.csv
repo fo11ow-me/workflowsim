@@ -1,0 +1,5 @@
+id,name,workflowComparator,ascending,deadlineFactor,reliabilityFactor,jobSequenceStrategy,neighborhoodFactor,slackTimeFactor,daxList,completionDetail,elecCost,finishTime,retryCount,overdueCount,plnRuntime,runtime
+1,Random(cmp=Depth),Depth,true,0.2,0.98,DEADLINE,0.2,1.0,"[Genome_50, Montage_100]",147 / 147,0.026418713094999997,7561.6769,2,1,0.157,0.72
+2,Random(cmp=Length),Length,true,0.2,0.98,DEADLINE,0.2,1.0,"[Genome_50, Montage_100]",147 / 147,0.03778295787888889,7732.8796,3,2,0.072,0.13
+3,"HEFT(cmp=Length,asc=false)",Length,false,0.2,0.98,DEADLINE,0.2,1.0,"[Genome_50, Montage_100]",147 / 147,0.014087965545555555,1119.8895,0,0,0.095,0.123
+4,"HEFT(cmp=JobNum,asc=false)",JobNum,false,0.2,0.98,DEADLINE,0.2,1.0,"[Genome_50, Montage_100]",147 / 147,0.014055877073055554,1163.4164,0,1,0.046,0.072

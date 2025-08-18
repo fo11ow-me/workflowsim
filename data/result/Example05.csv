@@ -1,0 +1,4 @@
+id,name,workflowComparator,ascending,deadlineFactor,reliabilityFactor,jobSequenceStrategy,neighborhoodFactor,slackTimeFactor,daxList,completionDetail,elecCost,finishTime,retryCount,overdueCount,plnRuntime,runtime
+2,"Random(cmp=Length,asc=false)",Length,false,0.2,0.98,DEADLINE,0.2,1.0,"[Montage_50, Montage_100, Montage_200, Montage_400]",750 / 750,0.017370699519444446,722.971,1,1,4.253,5.283
+1,Random,Default,true,0.2,0.98,DEADLINE,0.2,1.0,"[Montage_50, Montage_100, Montage_200, Montage_400]",750 / 750,0.0174466865875,674.4552,3,1,4.339,5.378
+3,HEFT,Default,true,0.2,0.98,DEADLINE,0.2,1.0,"[Montage_50, Montage_100, Montage_200, Montage_400]",750 / 750,0.03132134637694445,172.7857,0,0,4.758,5.694
