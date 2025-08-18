@@ -1,7 +1,5 @@
 package com.qiujie.util;
 
-import com.qiujie.entity.Job;
-import com.qiujie.entity.Workflow;
 import com.qiujie.entity.Dax;
 import org.jdom2.Document;
 import org.jdom2.Element;

@@ -30,8 +30,7 @@ public class RandomPlanner extends WorkflowPlannerAbstract {
     }
 
     public void init() throws Exception {
-        Class<?> clazz = Class.forName(getParam().getWorkflowComparator());
-        Constructor<?> constructor = clazz.getDeclaredConstructor();
+        Constructor<?> constructor = getParam().getWorkflowComparator().getDeclaredConstructor();
         WorkflowComparatorInterface comparatorInterface = (WorkflowComparatorInterface) constructor.newInstance();
         Comparator<Workflow> workflowComparator = comparatorInterface.get(getParam().isAscending());
         getWorkflowList().sort(workflowComparator);

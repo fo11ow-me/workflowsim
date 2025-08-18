@@ -2,7 +2,9 @@ package com.qiujie.util;
 
 import cn.hutool.core.date.DateUtil;
 import cn.hutool.core.io.FileUtil;
-import cn.hutool.json.*;
+import cn.hutool.core.text.csv.CsvUtil;
+import cn.hutool.json.JSON;
+import cn.hutool.json.JSONUtil;
 import com.qiujie.entity.Freq2Power;
 import com.qiujie.entity.Cpu;
 import com.qiujie.core.DvfsCloudletSchedulerSpaceShared;
@@ -25,10 +27,13 @@ import org.knowm.xchart.XYChart;
 import org.knowm.xchart.XYChartBuilder;
 import org.knowm.xchart.style.Styler;
 
-import java.io.File;
+import java.lang.reflect.Field;
+import java.lang.reflect.Modifier;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.nio.charset.StandardCharsets;
 import java.util.*;
+import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 import static com.qiujie.Constants.*;
@@ -196,16 +201,15 @@ public class ExperimentUtil {
             taskList.add(new Task().setId(job.getCloudletId()).setName(job.getName()).setStartTime(DateUtil.format(new Date(baseMilliseconds + Math.round(job.getExecStartTime() * 1000)), "yyyy-MM-dd HH:mm:ss"))
                     .setEndTime(DateUtil.format(new Date(baseMilliseconds + Math.round(job.getExecFinishTime() * 1000)), "yyyy-MM-dd HH:mm:ss")).setVmId(job.getGuestId()).setChildList(childList).setDepth(job.getDepth()));
         }
-        String jsonStr = JSONUtil.toJsonPrettyStr(taskList);
+        String jsonStr = JSONUtil.toJsonStr(taskList);
         String path = SIM_DIR + str + ".json";
         FileUtil.writeUtf8String(jsonStr, path);
     }
 
 
     public static void generateExperimentData(List<Result> list, String str) {
-        String jsonStr = JSONUtil.toJsonPrettyStr(list);
-        String path = RESULT_DIR + str + ".json";
-        FileUtil.writeUtf8String(jsonStr, path);
+        String path = RESULT_DIR + str + ".csv";
+        CsvUtil.getWriter( path, StandardCharsets.UTF_8,false).writeBeans(list);
     }
 
 
@@ -349,7 +353,7 @@ public class ExperimentUtil {
     }
 
 
-    public static String getFilenameNoExt(File file) {
+    public static String getFilenameNoExt(java.io.File file) {
         String filename = file.getName();
         int lastDotIndex = filename.lastIndexOf('.');
         if (lastDotIndex == -1) {
@@ -361,8 +365,14 @@ public class ExperimentUtil {
 
     public static String removeLeadingControlChars(String str) {
         if (str == null) return null;
-
         return str.replaceFirst("^[\\x00-\\x1F\\x7F]+", "");
+    }
+
+
+    public static List<Field> getNonStaticFields(Class<?> clazz) {
+        return Arrays.stream(clazz.getDeclaredFields())
+                .filter(f -> !Modifier.isStatic(f.getModifiers()))
+                .collect(Collectors.toList());
     }
 
 }
