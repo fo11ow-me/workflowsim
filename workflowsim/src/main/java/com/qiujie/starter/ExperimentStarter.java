@@ -2,19 +2,24 @@ package com.qiujie.starter;
 
 import ch.qos.logback.classic.Level;
 import cn.hutool.core.io.FileUtil;
-import cn.hutool.json.JSONUtil;
+import cn.hutool.core.text.csv.CsvUtil;
+import cn.hutool.core.text.csv.CsvWriter;
 import com.qiujie.entity.Result;
 import com.qiujie.entity.SimParam;
+import com.qiujie.util.ExperimentUtil;
 import lombok.AccessLevel;
 import lombok.Setter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.*;
+import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.IntStream;
 
 import static com.qiujie.Constants.*;
 
@@ -67,38 +72,41 @@ public abstract class ExperimentStarter {
         int progressStep = (int) Math.max(1, Math.sqrt(size));
         int availableCores = Runtime.getRuntime().availableProcessors();
         int maxConcurrent = Math.max(1, availableCores - RESERVED_CORES);
-        log.info("🖥️  Detected CPU cores: {}, setting max concurrent processes: {}", availableCores, maxConcurrent);
-
         String javaPath = System.getProperty("java.home") + "/bin/java";
         String classPath = System.getProperty("java.class.path");
 
-        // Manage the idle process processes with a blocking queue
-        List<SimProcess> processList = new CopyOnWriteArrayList<>();
-        BlockingQueue<SimProcess> processPool = new ArrayBlockingQueue<>(maxConcurrent);
+        log.info("🖥️  Detected CPU cores: {}, setting max concurrent processes: {}", availableCores, maxConcurrent);
 
-        // Initialize the process pool
-        for (int i = 0; i < maxConcurrent; i++) {
-            try {
-                SimProcess simProcess = new SimProcess(javaPath, classPath, name, level);
-                processList.add(simProcess);
-                processPool.put(simProcess);
-            } catch (IOException | InterruptedException e) {
-                log.error("❌  Failed to start SimProcess", e);
-                Thread.currentThread().interrupt();
-            }
-        }
+        // Start multiple processes
+        List<SimProcess> startedProcesses = IntStream.range(0, maxConcurrent)
+                .parallel()
+                .mapToObj(i -> {
+                    try {
+                        return new SimProcess(javaPath, classPath, name, level);
+                    } catch (IOException e) {
+                        log.error("❌ Failed to start SimProcess", e);
+                        return null;
+                    }
+                })
+                .filter(Objects::nonNull)
+                .toList();
+        List<SimProcess> processList = new CopyOnWriteArrayList<>(startedProcesses);
+
+        // Manage the idle process processes with a blocking queue
+        BlockingQueue<SimProcess> processPool = new ArrayBlockingQueue<>(maxConcurrent);
+        processPool.addAll(startedProcesses);
 
         Thread monitorThread = new Thread(new ProcessMonitor(processList, processPool, maxConcurrent, javaPath, classPath, name, level, log));
         monitorThread.setDaemon(true);
         monitorThread.start();
 
         ExecutorService executor = Executors.newFixedThreadPool(maxConcurrent);
-        AtomicInteger counter = new AtomicInteger();
 
         BlockingQueue<Result> resultQueue = new LinkedBlockingQueue<>();
         Thread writerThread = createWriterThread(resultQueue);
         writerThread.start();
-
+        // count progress
+        AtomicInteger counter = new AtomicInteger();
 
         for (SimParam simParam : paramList) {
             executor.submit(() -> {
@@ -120,7 +128,7 @@ public abstract class ExperimentStarter {
                     // log progress
                     int count = counter.incrementAndGet();
                     if (count == 1 || count == size || count % progressStep == 0) {
-                        log.info("✅  Progress: {}% ({} / {})", count * 100.0 / size, count, size);
+                        log.info("✅  Progress: {} / {}", count, size);
                     }
                     // Return the process to the pool after the simulation is done
                     if (simProcess != null && simProcess.isAlive()) {
@@ -136,6 +144,8 @@ public abstract class ExperimentStarter {
         }
 
         executor.shutdown();
+        paramList.clear();
+
         try {
 
             executor.awaitTermination(Long.MAX_VALUE, TimeUnit.NANOSECONDS);
@@ -164,7 +174,10 @@ public abstract class ExperimentStarter {
      */
     private Thread createWriterThread(BlockingQueue<Result> resultQueue) {
         return new Thread(() -> {
-            try (BufferedWriter writer = new BufferedWriter(new FileWriter(RESULT_DIR + name + ".jsonl", false))) {
+            try (BufferedWriter writer = new BufferedWriter(new FileWriter(RESULT_DIR + name + ".csv", false))) {
+                List<Field> fields = ExperimentUtil.getNonStaticFields(Result.class);
+                CsvWriter csvWriter = CsvUtil.getWriter(writer);
+                csvWriter.writeHeaderLine(fields.stream().map(Field::getName).toArray(String[]::new));
                 List<Result> batch = new ArrayList<>();
                 while (true) {
                     Result result = resultQueue.take();
@@ -173,12 +186,13 @@ public abstract class ExperimentStarter {
                     }
                     batch.add(result);
                     if (batch.size() >= BATCH_SIZE) {
-                        writeBatch(writer, batch);
+                        csvWriter.writeBeans(batch, false);
                         batch.clear();
                     }
                 }
                 if (!batch.isEmpty()) {
-                    writeBatch(writer, batch);
+                    csvWriter.writeBeans(batch, false);
+                    batch.clear();
                 }
             } catch (IOException | InterruptedException e) {
                 log.error("❌  Failed to write results", e);
@@ -186,15 +200,4 @@ public abstract class ExperimentStarter {
             }
         });
     }
-
-
-    private void writeBatch(BufferedWriter writer, List<Result> batch) throws IOException {
-        for (Result r : batch) {
-            String json = JSONUtil.toJsonStr(r);
-            writer.write(json);
-            writer.newLine();
-        }
-        writer.flush();
-    }
-
 }
