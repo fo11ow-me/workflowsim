@@ -16,43 +16,33 @@ from datetime import datetime
 from itertools import combinations
 
 
-def load_json_data(json_path):
-    """
-    Load JSON or JSONL file and return data as a list of dictionaries.
-
-    Supports:
-    - .json: Standard JSON file (array or single object)
-    - .jsonl: JSON Lines file (one JSON object per line)
-
-    :param json_path: Path to the JSON or JSONL file.
-    :return: List of data records.
-    """
+def load_data(path):
     data = []
 
-    if json_path.endswith('.jsonl'):
-        # Support JSONL format (one JSON object per line)
-        with open(json_path, 'r', encoding='utf-8') as f:
+    if path.endswith('.jsonl'):
+        with open(path, 'r', encoding='utf-8') as f:
             for line in f:
-                if line.strip():  # Skip empty lines
+                if line.strip():
                     data.append(json.loads(line))
-    elif json_path.endswith('.json'):
-        # Support JSON format (could be an array or a single object)
-        with open(json_path, 'r', encoding='utf-8') as f:
+    elif path.endswith('.json'):
+        with open(path, 'r', encoding='utf-8') as f:
             raw = json.load(f)
             if isinstance(raw, list):
-                data = raw  # If it's a list, return directly
+                data = raw
             else:
-                data = [raw]  # If it's a single object, wrap in a list
+                data = [raw]
+    elif path.endswith('.csv'):
+        df = pd.read_csv(path)
+        data = df.to_dict(orient='records')
     else:
-        # Unsupported file type
-        raise ValueError(f"Unsupported file format: {json_path}")
+        raise ValueError(f"Unsupported file format: {path}")
 
-    print(f"✅ Loaded {len(data)} records from {json_path}")
+    print(f"✅ Loaded {len(data)} records from {path}")
     return data
 
 
-def save_text(filepath, content):
-    with open(filepath, "w", encoding="utf-8") as f:
+def save_text(path, content):
+    with open(path, "w", encoding="utf-8") as f:
         f.write(content)
 
 
@@ -112,7 +102,7 @@ def save_mean_ci_plot(df, group_var, target_var, path):
     plt.close()
 
 
-def anova(json_path=None, data=None, target_variable="elecCost", group_variables=None, output_dir=None,
+def anova(path=None, data=None, target_variable="elecCost", group_variables=None, output_dir=None,
           use_rpd=True,
           best_known=None):
     if not group_variables or len(group_variables) == 0:
@@ -121,10 +111,10 @@ def anova(json_path=None, data=None, target_variable="elecCost", group_variables
     if data is not None:
         df = pd.DataFrame(data)
         base_name = "provided_data"
-    elif json_path and os.path.exists(json_path):
-        raw_data = load_json_data(json_path)
+    elif path and os.path.exists(path):
+        raw_data = load_data(path)
         df = pd.DataFrame(raw_data)
-        base_name = os.path.splitext(os.path.basename(json_path))[0]
+        base_name = os.path.splitext(os.path.basename(path))[0]
     else:
         raise ValueError("Either json_path or data must be provided.")
 
@@ -289,10 +279,10 @@ def sanitize_filename(name):
     return re.sub(r'[\\/*?:"<>| ]', '_', str(name))
 
 
-def plot_comparison_chart(json_path, x_axis='deadlineFactor', y_axis='elecCost',
+def plot_comparison_chart(path, x_axis='deadlineFactor', y_axis='elecCost',
                           chart_title=None, output_dir=None, use_rpd=True):
-    # 1. Load JSON or JSONL data
-    raw_data = load_json_data(json_path)
+    # 1. data
+    raw_data = load_data(path)
 
     # 2. Convert to DataFrame
     df = pd.DataFrame(raw_data)
@@ -313,7 +303,7 @@ def plot_comparison_chart(json_path, x_axis='deadlineFactor', y_axis='elecCost',
     df['name'] = df['name'].apply(lambda x: re.sub(r'\(.*?\)', '', x).strip())
 
     # 6. File path & title
-    base_name = os.path.splitext(os.path.basename(json_path))[0]
+    base_name = os.path.splitext(os.path.basename(path))[0]
     x_axis_name = sanitize_filename(x_axis)
     y_axis_name = sanitize_filename(plot_y)
 
@@ -373,5 +363,3 @@ def plot_comparison_chart(json_path, x_axis='deadlineFactor', y_axis='elecCost',
     plt.savefig(save_path, dpi=300, bbox_inches='tight')
     print(f"✅ Chart saved to: {save_path}")
     plt.close()
-
-
