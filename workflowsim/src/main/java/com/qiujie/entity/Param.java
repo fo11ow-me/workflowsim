@@ -4,40 +4,20 @@ import com.qiujie.comparator.WorkflowComparatorInterface;
 import com.qiujie.enums.JobSequenceStrategyEnum;
 import com.qiujie.util.ExperimentUtil;
 import lombok.Data;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
 import lombok.experimental.Accessors;
-
-import java.io.Serializable;
-
 import static com.qiujie.Constants.*;
 
 @Data
 @Accessors(chain = true)
-public class Param  implements Serializable{
+public class Param  {
     // Default parameter values from Constants
-    private String workflowComparator = WORKFLOW_COMPARATOR.getName();
+    private Class<? extends WorkflowComparatorInterface> workflowComparator = WORKFLOW_COMPARATOR;
     private boolean ascending = ASCENDING;
     private double deadlineFactor = DEADLINE_FACTOR;
     private double reliabilityFactor = RELIABILITY_FACTOR;
     private JobSequenceStrategyEnum jobSequenceStrategy = JOB_SEQUENCE_STRATEGY;
     private double neighborhoodFactor = NEIGHBORHOOD_FACTOR;
     private double slackTimeFactor = SLACK_TIME_FACTOR;
-
-    /**
-     * Hutool — specifically, the `JSONUtil.toBean(...)` method — does not call your custom `setWorkflowComparator(Class<?>)` method because:
-     * It is a regular method (not a standard JavaBean setter), and Hutool's deserialization mechanism only calls standard JavaBean-style setters like `setXxx(String)`, or it directly sets the field via reflection.
-     */
-    public Param setWorkflowComparator(Class<? extends WorkflowComparatorInterface> workflowComparator) {
-        return setWorkflowComparator(workflowComparator.getName());
-    }
-
-    public Param setWorkflowComparator(String workflowComparator) {
-        this.workflowComparator = workflowComparator;
-        return this;
-    }
-
 
     @Override
     public String toString() {
@@ -51,8 +31,8 @@ public class Param  implements Serializable{
             hasDiff[0] = true;
         };
 
-        if (!workflowComparator.equals(WORKFLOW_COMPARATOR.getName())) {
-            appendIfNotDefault.accept("cmp", ExperimentUtil.getPrefixFromClassName(workflowComparator));
+        if (!workflowComparator.getName().equals(WORKFLOW_COMPARATOR.getName())) {
+            appendIfNotDefault.accept("cmp", ExperimentUtil.getPrefixFromClassName(workflowComparator.getSimpleName()));
         }
 
         if (ascending != ASCENDING) {

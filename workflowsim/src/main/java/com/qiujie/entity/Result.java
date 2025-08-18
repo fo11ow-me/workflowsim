@@ -5,15 +5,13 @@ import com.qiujie.planner.WorkflowPlannerAbstract;
 import com.qiujie.util.ExperimentUtil;
 import lombok.Data;
 import lombok.experimental.Accessors;
-
-import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
 @Data
 @Accessors(chain = true)
-public class Result implements Serializable {
+public class Result {
     private int id;
     private String name;
     private String workflowComparator;
@@ -45,15 +43,15 @@ public class Result implements Serializable {
         int totalCloudlets = broker.getWorkflowList().stream().mapToInt(Workflow::getJobNum).sum();
         setId(simParam.getId());
         setName(planner.toString());
-        setWorkflowComparator(ExperimentUtil.getPrefixFromClassName(simParam.getParam().getWorkflowComparator()));
+        getDaxList().addAll(simParam.getDaxList());
+        setWorkflowComparator(ExperimentUtil.getPrefixFromClassName(simParam.getParam().getWorkflowComparator().getSimpleName()));
         setAscending(simParam.getParam().isAscending());
         setDeadlineFactor(simParam.getParam().getDeadlineFactor());
         setReliabilityFactor(simParam.getParam().getReliabilityFactor());
         setJobSequenceStrategy(simParam.getParam().getJobSequenceStrategy().name());
         setNeighborhoodFactor(simParam.getParam().getNeighborhoodFactor());
         setSlackTimeFactor(simParam.getParam().getSlackTimeFactor());
-        getDaxList().addAll(simParam.getDaxList());
-        setCompletionDetail(String.format("%.2f%% (%d / %d)", finishedCloudlets * 100.0 / totalCloudlets, finishedCloudlets, totalCloudlets));
+        setCompletionDetail(String.format("%d / %d", finishedCloudlets, totalCloudlets));
         setElecCost(broker.getCloudletReceivedList().stream().mapToDouble(cloudlet -> ((Job) cloudlet).getElecCost()).sum());
         setFinishTime(broker.getCloudletReceivedList().getLast().getExecFinishTime());
         setRetryCount(broker.getCloudletReceivedList().stream().mapToInt(cloudlet -> ((Job) cloudlet).getRetryCount()).sum());
