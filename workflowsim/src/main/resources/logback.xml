@@ -3,9 +3,14 @@
     <property name="STARTUP_CLASS" value="${startup.class:-default}"/>
 
     <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
-<!--        <target>System.err</target>-->
+        <!--
+          Since System.out is used to return result data and console output normally goes to System.out by default,
+          to prevent console messages from contaminating the result data, console information is directed to System.err.
+        -->
+        <target>System.err</target>
         <encoder>
-            <pattern>%d{HH:mm:ss.SSS} [%thread] %highlight(%-5level) %cyan(%logger{15}) - %msg%n</pattern>
+            <pattern>%white(%d{HH:mm:ss.SSS} [%thread]) %highlight(%-5level) %cyan(%logger{15}) %white(- %msg%n)
+            </pattern>
         </encoder>
     </appender>
 
