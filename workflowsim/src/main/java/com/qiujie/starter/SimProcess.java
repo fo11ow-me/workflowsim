@@ -2,21 +2,24 @@ package com.qiujie.starter;
 
 import ch.qos.logback.classic.Level;
 
+import com.esotericsoftware.kryo.kryo5.Kryo;
+import com.esotericsoftware.kryo.kryo5.io.Input;
+import com.esotericsoftware.kryo.kryo5.io.Output;
 import com.qiujie.Constants;
 import com.qiujie.entity.Result;
 import com.qiujie.entity.SimParam;
+import com.qiujie.util.KryoUtil;
 import lombok.extern.slf4j.Slf4j;
 
 import java.io.IOException;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
 import java.util.concurrent.TimeUnit;
 
 @Slf4j
 class SimProcess {
     private final Process process;
-    private final ObjectOutputStream output;
-    private final ObjectInputStream input;
+    private final Output output;
+    private final Input input;
+    private final Kryo kryo;
 
 
     SimProcess(String javaPath, String classPath, String name, Level level) throws IOException {
@@ -30,20 +33,21 @@ class SimProcess {
                 String.valueOf(level.levelInt)
         );
         process = pb.start();
-        output = new ObjectOutputStream(process.getOutputStream());
-        input = new ObjectInputStream(process.getInputStream());
+        output = new Output(process.getOutputStream());
+        input = new Input(process.getInputStream());
+        kryo = KryoUtil.getInstance();
     }
 
-    synchronized Result run(SimParam simParam) throws IOException, ClassNotFoundException {
-        output.writeObject(simParam);
+    Result run(SimParam simParam) {
+        kryo.writeObject(output, simParam);
         output.flush();
-        return (Result) input.readObject();
+        return kryo.readObject(input, Result.class);
     }
 
 
-    synchronized void sendPoisonPillAndClose() {
+    void sendPoisonPillAndClose() {
         try {
-            output.writeObject(SimParam.POISON_PILL);
+            kryo.writeObject(output, SimParam.POISON_PILL);
             output.flush();
             boolean exited = process.waitFor(Constants.PROC_TIMEOUT_SECONDS, TimeUnit.SECONDS);
             if (!exited) {
@@ -51,14 +55,12 @@ class SimProcess {
             }
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
-        } catch (IOException e) {
-            throw new RuntimeException(e);
         } finally {
             close();
         }
     }
 
-    synchronized void close() {
+    void close() {
         try {
             output.close();
         } catch (Exception ignored) {
@@ -78,7 +80,7 @@ class SimProcess {
         }
     }
 
-    public boolean isAlive() {
+    boolean isAlive() {
         return process.isAlive();
     }
 
