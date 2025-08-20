@@ -97,12 +97,11 @@ public class SimStarter {
             while (true) {
                 SimParam simParam = kryo.readObject(input, SimParam.class);
                 if (simParam.equals(SimParam.POISON_PILL)) {
-                    kryo.writeObject(output, Result.POISON_PILL);
-                    output.flush();
                     break;
                 }
                 Result result = starter.start(simParam);
                 if (result != null) {
+                    log.info("Sending result: {}", result);
                     kryo.writeObject(output, result);
                     output.flush();
                 } else {
