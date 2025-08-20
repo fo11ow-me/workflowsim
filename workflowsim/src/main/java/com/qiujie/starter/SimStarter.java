@@ -101,7 +101,6 @@ public class SimStarter {
                 }
                 Result result = starter.start(simParam);
                 if (result != null) {
-                    log.info("Sending result: {}", result);
                     kryo.writeObject(output, result);
                     output.flush();
                 } else {
