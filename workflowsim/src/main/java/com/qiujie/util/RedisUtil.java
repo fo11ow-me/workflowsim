@@ -32,7 +32,7 @@ public class RedisUtil {
         return jedisPool;
     }
 
-    public static void setObject(String key, Object value) {
+    public static void set(String key, Object value) {
         Kryo kryo = KryoUtil.getInstance();
         try (Jedis jedis = getJedisPool().getResource();
              ByteArrayOutputStream baos = new ByteArrayOutputStream();
@@ -42,13 +42,13 @@ public class RedisUtil {
             jedis.set(key.getBytes(), baos.toByteArray());
 
         } catch (Exception e) {
-            throw new RuntimeException("Redis setObject failed", e);
+            throw new RuntimeException("Redis set failed", e);
         }
     }
 
 
     @SuppressWarnings("unchecked")
-    public static <T> T getObject(String key) {
+    public static <T> T get(String key) {
         Kryo kryo = KryoUtil.getInstance();
         try (Jedis jedis = getJedisPool().getResource()) {
             byte[] bytes = jedis.get(key.getBytes());
@@ -60,7 +60,7 @@ public class RedisUtil {
                 return (T) kryo.readClassAndObject(input);
             }
         } catch (Exception e) {
-            throw new RuntimeException("Redis getObject failed", e);
+            throw new RuntimeException("Redis get failed", e);
         }
     }
 
@@ -73,7 +73,7 @@ public class RedisUtil {
     }
 
 
-    public static void pushObjectToList(String listKey, Object value) {
+    public static void lpush(String listKey, Object value) {
         Kryo kryo = KryoUtil.getInstance();
         try (Jedis jedis = getJedisPool().getResource();
              ByteArrayOutputStream baos = new ByteArrayOutputStream();
@@ -82,12 +82,12 @@ public class RedisUtil {
             output.flush();
             jedis.lpush(listKey.getBytes(), baos.toByteArray());
         } catch (Exception e) {
-            throw new RuntimeException("Redis pushObjectToList failed", e);
+            throw new RuntimeException("Redis lpush failed", e);
         }
     }
 
     @SuppressWarnings("unchecked")
-    public static <T> T blockingPopObjectFromList(String listKey, int timeout) {
+    public static <T> T brpop(String listKey, int timeout) {
         Kryo kryo = KryoUtil.getInstance();
         try (Jedis jedis = getJedisPool().getResource()) {
             List<byte[]> res = jedis.brpop(timeout, listKey.getBytes());
@@ -98,7 +98,7 @@ public class RedisUtil {
                 return (T) kryo.readClassAndObject(input);
             }
         } catch (Exception e) {
-            throw new RuntimeException("Redis blockingPopObjectFromList failed", e);
+            throw new RuntimeException("Redis brpop failed", e);
         }
     }
 
