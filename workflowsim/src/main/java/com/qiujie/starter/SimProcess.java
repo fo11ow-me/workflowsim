@@ -19,7 +19,6 @@ class SimProcess {
     private final Process process;
     private final Output output;
     private final Input input;
-    private final Kryo kryo;
 
 
     SimProcess(String javaPath, String classPath, String name, Level level) throws IOException {
@@ -35,10 +34,10 @@ class SimProcess {
         process = pb.start();
         output = new Output(process.getOutputStream());
         input = new Input(process.getInputStream());
-        kryo = KryoUtil.getInstance();
     }
 
     Result run(SimParam simParam) {
+        Kryo kryo = KryoUtil.getInstance();
         kryo.writeObject(output, simParam);
         output.flush();
         return kryo.readObject(input, Result.class);
@@ -46,6 +45,7 @@ class SimProcess {
 
 
     void sendPoisonPillAndClose() {
+        Kryo kryo = KryoUtil.getInstance();
         try {
             kryo.writeObject(output, SimParam.POISON_PILL);
             output.flush();
