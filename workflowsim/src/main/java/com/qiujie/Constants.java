@@ -10,10 +10,10 @@ import java.util.List;
 
 public class Constants {
 
-
-    public static final String DAX_DIR = System.getProperty("user.dir") + File.separator + "data" + File.separator + "dax" + File.separator;
-    public static final String SIM_DIR = System.getProperty("user.dir") + File.separator + "data" + File.separator + "sim" + File.separator;
-    public static final String RESULT_DIR = System.getProperty("user.dir") + File.separator + "data" + File.separator + "result" + File.separator;
+    public static final String DATA_DIR = System.getProperty("user.dir") + File.separator + "data" + File.separator;
+    public static final String DAX_DIR = DATA_DIR + "dax" + File.separator;
+    public static final String SIM_DIR = DATA_DIR + "sim" + File.separator;
+    public static final String RESULT_DIR = DATA_DIR + "result" + File.separator;
 
     // redis
     public static final String HOST = "localhost";

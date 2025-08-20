@@ -3,7 +3,6 @@ package com.qiujie.util;
 import cn.hutool.core.date.DateUtil;
 import cn.hutool.core.io.FileUtil;
 import cn.hutool.core.text.csv.CsvUtil;
-import cn.hutool.json.JSON;
 import cn.hutool.json.JSONUtil;
 import com.qiujie.entity.Freq2Power;
 import com.qiujie.entity.Cpu;
@@ -69,7 +68,7 @@ public class ExperimentUtil {
      */
     public static List<Vm> createVms(final ContinuousDistribution random, int userId) {
         List<Vm> list = new ArrayList<>();
-        List<Cpu> cpuList = RedisUtil.getObject("cpu:list");
+        List<Cpu> cpuList = RedisUtil.get("cpu:list");
         //create VMs
         for (int i = 0; i < VMS; i++) {
             Cpu cpu = getRandomElement(random, cpuList);
@@ -96,7 +95,7 @@ public class ExperimentUtil {
 
 
     public static Workflow createWorkflow(String name) {
-        Dax dax = RedisUtil.getObject(name);
+        Dax dax = RedisUtil.get(name);
         Map<String, Job> jobMap = new HashMap<>();
         for (Dax.Job daxJob : dax.getJobList()) {
             Job job = new Job(daxJob.getName(), daxJob.getLength()).setDepth(daxJob.getDepth());

@@ -29,7 +29,7 @@ public class DataLoader {
     }
 
     private static void uploadCpus() {
-        RedisUtil.setObject("cpu:list", getCpus());
+        RedisUtil.set("cpu:list", getCpus());
     }
 
     private static void uploadDaxs() {
@@ -37,7 +37,7 @@ public class DataLoader {
         for (File file : Objects.requireNonNull(dir.listFiles())) {
             if (file.getName().endsWith(".xml")) {
                 Dax dax = DaxParser.parse(file);
-                RedisUtil.setObject(dax.getName(), dax);
+                RedisUtil.set(dax.getName(), dax);
             }
         }
     }
