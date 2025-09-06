@@ -11,5 +11,15 @@ public class Cpu {
     private int pes;
     private double mips;
     private double frequency;
-    private List<Freq2Power> freq2PowerList;
+    private List<Fv> fvList;
+
+    @Data
+    public static class Fv {
+        private double frequency;
+        private double mips;
+        private double power;
+        private double lambda;
+        private int level;
+        private String type;
+    }
 }

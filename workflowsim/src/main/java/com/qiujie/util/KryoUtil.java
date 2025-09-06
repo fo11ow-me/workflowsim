@@ -17,7 +17,7 @@ public class KryoUtil {
         kryo.register(Dax.Job.class);
         kryo.register(Dax.File.class);
         kryo.register(Cpu.class);
-        kryo.register(Freq2Power.class);
+        kryo.register(Cpu.Fv.class);
         kryo.register(ArrayList.class);
         kryo.register(HashMap.class);
         kryo.register(SimParam.class);
