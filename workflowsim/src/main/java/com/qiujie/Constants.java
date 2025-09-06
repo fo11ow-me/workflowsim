@@ -23,7 +23,7 @@ public class Constants {
     public static final int RESERVED_CORES = 4;  // Number of CPU cores to reserve for system tasks
     public static final int PROC_TIMEOUT_SECONDS = 20; // Timeout for subProcess
     public static final int PROCESS_MONITOR_SLEEP_MS = 5000;
-    public static final int BATCH_SIZE = 500;
+    public static final int BATCH_SIZE = 1000;
 
     public static final Level LEVEL = Level.ERROR;
 
@@ -75,7 +75,7 @@ public class Constants {
     public static final long VM_SIZE = 10000; // image size (Megabyte)
 
     // Transient failure rate of the virtual machine at maximum operating frequency
-    public static double λ = 1e-5;
+    public final static double λ = 1e-5;
     // Measures the sensitivity of transient fault rate to frequency scaling
     public static final int SR = 2;
 
