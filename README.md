@@ -32,7 +32,7 @@
 
 - Support multi-factor ANOVA
 
-![](./assets/README-1755499322365.png)
+![](./assets/README-1757141782068.png)
 
 
 
