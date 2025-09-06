@@ -2,7 +2,6 @@ package com.qiujie.planner;
 
 import com.qiujie.entity.*;
 import com.qiujie.enums.JobSequenceStrategyEnum;
-import com.qiujie.test.ValidateUtil;
 import com.qiujie.util.ExperimentUtil;
 import lombok.AccessLevel;
 import lombok.Getter;
@@ -19,7 +18,6 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import static com.qiujie.Constants.*;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @Slf4j
 public abstract class WorkflowPlannerAbstract {
@@ -94,7 +92,7 @@ public abstract class WorkflowPlannerAbstract {
         Map<Job, Map<Job, Double>> avgPredecessorDataTransferTimeMap = new HashMap<>();
         int vmNum = getVmList().size();
         for (Job job : workflow.getJobList()) {
-            avgPredecessorDataTransferTimeMap.put(job, new HashMap<>());
+            Map<Job, Double> map = new HashMap<>();
             for (Job parentJob : job.getParentList()) {
                 double total = 0.0;
                 for (Vm vm : getVmList()) {
@@ -104,8 +102,9 @@ public abstract class WorkflowPlannerAbstract {
                     }
                 }
                 double avgTime = total / (vmNum * vmNum);
-                avgPredecessorDataTransferTimeMap.get(job).put(parentJob, avgTime);
+                map.put(parentJob, avgTime);
             }
+            avgPredecessorDataTransferTimeMap.put(job, map);
         }
         return avgPredecessorDataTransferTimeMap;
     }
@@ -183,39 +182,29 @@ public abstract class WorkflowPlannerAbstract {
                 .toList();
         execTimeMap = new HashMap<>();
         reliabilityMap = new HashMap<>();
-        double sumLogReliability = 0.0; // Sum of the logarithms of each task's reliability
+        double sumLogReliability = 0.0;
         for (Job job : workflow.getJobList()) {
             Map<Fv, Double> jobExecTimeMap = new HashMap<>();
             Map<Fv, Double> jobReliabilityMap = new HashMap<>();
-            double maxSubReliability = 0.0; // Store the maximum reliability for the current task
-            // Iterate over all unique VM types
+            double maxSubReliability = 0.0;
             for (DvfsVm vm : uniqueVmList) {
                 for (Fv fv : vm.getFvList()) {
                     double executionTime = job.getLength() / fv.getMips();
                     jobExecTimeMap.put(fv, executionTime);
-
                     double reliability = ExperimentUtil.calculateReliability(fv.getLambda(), executionTime);
                     jobReliabilityMap.put(fv, reliability);
-
                     maxSubReliability = Math.max(maxSubReliability, reliability);
                 }
             }
             execTimeMap.put(job, jobExecTimeMap);
             reliabilityMap.put(job, jobReliabilityMap);
-            // Protect against extreme small reliability values to avoid log(0) or negative infinity errors
-            double safeReliability = Math.max(maxSubReliability, 1e-12);
-            // Accumulate the logarithm of the maximum reliability for each task
-            sumLogReliability += Math.log(safeReliability);
+            // Accumulate the logarithm of the maximum reliability for each job
+            sumLogReliability += Math.log(maxSubReliability);
         }
-
         int jobNum = workflow.getJobNum();
-
-        // Calculate the average log reliability (geometric mean in log space)
+        // Calculate the average log reliability
         double avgLogReliability = sumLogReliability / jobNum;
-        // Convert the average log reliability back to the geometric mean reliability
         double smoothReliability = Math.exp(avgLogReliability);
-
-        // Set the workflow's reliability goal
         workflow.setReliGoal(Math.pow(getParam().getReliabilityFactor() * smoothReliability, jobNum));
     }
 
