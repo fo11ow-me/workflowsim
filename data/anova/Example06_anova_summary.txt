@@ -1,0 +1,19 @@
+ANOVA Summary for Example06
+Timestamp: 2025-09-06 11:40:38
+Analysis Type: Multi-Way ANOVA
+Target Variable: elecCostRpd
+Grouping Variables: workflowComparator, ascending
+
+                                    sum_sq     df         F    PR(>F)
+workflowComparator               67.744066    3.0  0.298861  0.826181
+ascending                       311.649117    1.0  4.124626  0.044006
+workflowComparator:ascending    461.104523    3.0  2.034215  0.111470
+Residual                      11484.838683  152.0       NaN       NaN
+
+Tukey HSD Results for ascending:
+Multiple Comparison of Means - Tukey HSD, FWER=0.05
+==================================================
+group1 group2 meandiff p-adj  lower  upper  reject
+--------------------------------------------------
+ False   True   2.7913 0.0446 0.0682 5.5144   True
+--------------------------------------------------
