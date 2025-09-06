@@ -4,7 +4,6 @@ import cn.hutool.core.date.DateUtil;
 import cn.hutool.core.io.FileUtil;
 import cn.hutool.core.text.csv.CsvUtil;
 import cn.hutool.json.JSONUtil;
-import com.qiujie.entity.Freq2Power;
 import com.qiujie.entity.Cpu;
 import com.qiujie.core.DvfsCloudletSchedulerSpaceShared;
 import com.qiujie.core.WorkflowDatacenter;
@@ -75,16 +74,11 @@ public class ExperimentUtil {
             DvfsVm vm = new DvfsVm(i, userId, cpu.getMips(), cpu.getPes(), cpu.getFrequency(), VM_RAM, VM_BW, VM_SIZE, VMM, new DvfsCloudletSchedulerSpaceShared(random));
             vm.setCpu(cpu.getName());
             List<Fv> fvList = new ArrayList<>();
-            List<Freq2Power> freq2PowerList = cpu.getFreq2PowerList();
-            for (Freq2Power freq2Power : freq2PowerList) {
-                // smaller frequency, bigger lambda (transient fault rate)
-                double lambda = λ * Math.pow(10, (SR * (cpu.getFrequency() - freq2Power.getFrequency()) / (cpu.getFrequency() - freq2PowerList.getLast().getFrequency())));
-                double mips = cpu.getMips() * freq2Power.getFrequency() / cpu.getFrequency();
-                int level = freq2PowerList.size() - 1 - freq2PowerList.indexOf(freq2Power);
+            List<Cpu.Fv> cpuFvList = cpu.getFvList();
+            for (Cpu.Fv cpuFv : cpuFvList) {
                 Fv fv = new Fv()
-                        .setLevel(level)
-                        .setLambda(lambda).setType(cpu.getName() + " (L" + level + ")")
-                        .setVm(vm).setMips(mips).setFrequency(freq2Power.getFrequency()).setPower(freq2Power.getPower());
+                        .setLevel(cpuFv.getLevel()).setLambda(cpuFv.getLambda()).setType(cpuFv.getType())
+                        .setVm(vm).setMips(cpuFv.getMips()).setFrequency(cpuFv.getFrequency()).setPower(cpuFv.getPower());
                 fvList.add(fv);
             }
             vm.setFvList(fvList);
