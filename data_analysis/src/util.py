@@ -122,21 +122,16 @@ def compare(path, x_axis="deadlineFactor", y_axis="elecCost",
     )
 
     if hue_count > 1:
-        plot_params["dodge"] = 0.3
+        plot_params["dodge"] = 0.2
 
     sns.pointplot(**plot_params)
     ax.set_xlabel(x_axis)
     ax.set_ylabel(f"{y_axis} (%)" if rpd else y_axis)
 
-    if hue_count > 1:
-        ax.legend(
-            title="Algorithm",
-            bbox_to_anchor=(1.02, 1),
-            loc="upper left",
-            frameon=False,
-        )
-    else:
-        ax.legend().remove()
+    ax.legend(
+        loc="upper right",   # 图表内右上角
+        frameon=False,
+    )
 
     plt.tight_layout()
     save_plot(fig, save_path)
