@@ -129,7 +129,7 @@ def compare(path, x_axis="deadlineFactor", y_axis="elecCost",
     ax.set_ylabel(f"{y_axis} (%)" if rpd else y_axis)
 
     ax.legend(
-        loc="upper right",   # 图表内右上角
+        loc="upper right",
         frameon=False,
     )
 
