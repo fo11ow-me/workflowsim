@@ -3,14 +3,18 @@ package com.qiujie.entity;
 import com.qiujie.core.WorkflowBroker;
 import com.qiujie.planner.WorkflowPlannerAbstract;
 import com.qiujie.util.ExperimentUtil;
+import lombok.AccessLevel;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 import lombok.experimental.Accessors;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
 @Data
 @Accessors(chain = true)
+@NoArgsConstructor(access = AccessLevel.PRIVATE)
 public class Result {
     private int id;
     private String name;
@@ -33,17 +37,12 @@ public class Result {
     public static final Result POISON_PILL = new Result().setId(-1);
 
 
-    public Result() {
-        this.daxList = new ArrayList<>();
-    }
-
     public Result(SimParam simParam, WorkflowPlannerAbstract planner, WorkflowBroker broker, double runtime) {
-        this();
         int finishedCloudlets = broker.getCloudletReceivedList().size();
         int totalCloudlets = broker.getWorkflowList().stream().mapToInt(Workflow::getJobNum).sum();
         setId(simParam.getId());
         setName(planner.toString());
-        getDaxList().addAll(simParam.getDaxList());
+        setDaxList(new ArrayList<>(simParam.getDaxList()));
         setWorkflowComparator(ExperimentUtil.getPrefixFromClassName(simParam.getParam().getWorkflowComparator().getSimpleName()));
         setAscending(simParam.getParam().isAscending());
         setDeadlineFactor(simParam.getParam().getDeadlineFactor());
