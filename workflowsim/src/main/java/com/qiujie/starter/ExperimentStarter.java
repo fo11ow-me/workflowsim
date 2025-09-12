@@ -14,9 +14,7 @@ import org.slf4j.LoggerFactory;
 
 import java.io.*;
 import java.lang.reflect.Field;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.IntStream;
@@ -29,14 +27,14 @@ public abstract class ExperimentStarter {
     private final Logger log;
     @Setter(AccessLevel.PROTECTED)
     private Level level;
-    private final List<SimParam> paramList;
+    private final Set<SimParam> params; // avoid duplication
 
     public ExperimentStarter() {
         this.name = getClass().getSimpleName();
         System.setProperty("startup.class", name);
         this.log = LoggerFactory.getLogger(ExperimentStarter.class);
         this.level = LEVEL;
-        this.paramList = new ArrayList<>();
+        this.params = new HashSet<>();
         start();
     }
 
@@ -63,12 +61,12 @@ public abstract class ExperimentStarter {
     protected abstract void addParams();
 
     protected void addParam(SimParam simParam) {
-        paramList.add(simParam);
+        params.add(simParam);
     }
 
 
     private void startSimProcesses() {
-        int size = paramList.size();
+        int size = params.size();
         int progressStep = (int) Math.max(1, Math.sqrt(size));
         int availableCores = Runtime.getRuntime().availableProcessors();
         int maxConcurrent = Math.max(1, availableCores - RESERVED_CORES);
@@ -108,7 +106,7 @@ public abstract class ExperimentStarter {
         // count progress
         AtomicInteger counter = new AtomicInteger();
 
-        for (SimParam simParam : paramList) {
+        for (SimParam simParam : params) {
             executor.submit(() -> {
                 SimProcess simProcess = null;
                 try {
@@ -144,12 +142,11 @@ public abstract class ExperimentStarter {
         }
 
         executor.shutdown();
-        paramList.clear();
+        params.clear();
 
         try {
 
             executor.awaitTermination(Long.MAX_VALUE, TimeUnit.NANOSECONDS);
-
             monitorThread.interrupt();
             monitorThread.join();
 
