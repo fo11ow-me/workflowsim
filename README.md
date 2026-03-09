@@ -10,29 +10,38 @@
   number of jobs in a workflow can be customized
 - Support workflow parsing and displays the workflow structure graph
 
-![](./assets/README-1749611130549.png)
+  ![](./assets/README-1749611130549.png)
 
 - Support visualization of simulation results, showing the entire simulation process as a Gantt chart
 
-![](./assets/README-1749611641222.png)
+  ![](./assets/README-1749611641222.png)
 
 - Support multiple levels of logging and generates corresponding log files
 
-![](./assets/README-1752633458340.png)
+  ![](./assets/README-1752633458340.png)
 
 - Support printing of both simulation and experimental results to the console
 
-![](./assets/README-1752649243930.png)
+  ![](./assets/README-1752649243930.png)
 
-![](./assets/README-1752649359550.png)
+  ![](./assets/README-1752649359550.png)
 
 - Support parallel simulation
 
-![](./assets/README-1755499171192.png)
+  ![](./assets/README-1755499171192.png)
 
 - Support multi-factor ANOVA
 
-![](./assets/README-1757141782068.png)
+  ![](./assets/README-1757141782068.png)
+
+
+## Getting Started
+
+  ```
+  workflowsim/README.md
+  data_analysis/README.md
+  vue-graph/README.md
+  ```
 
 
 
