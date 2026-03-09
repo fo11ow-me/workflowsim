@@ -21,9 +21,9 @@ public class Constants {
     public static final String PASSWORD = "123456";
 
     public static final int RESERVED_CORES = 4;  // Number of CPU cores to reserve for system tasks
-    public static final int PROC_TIMEOUT_SECONDS = 20; // Timeout for subProcess
-    public static final int PROCESS_MONITOR_SLEEP_MS = 5000;
     public static final int BATCH_SIZE = 1000;
+    public static final int QUEUE_CAPACITY = 50000; // Avoid submitting a large number of tasks in a short period of time
+    public static final String CPUS = "cpus";
 
     public static final Level LEVEL = Level.ERROR;
 
@@ -77,7 +77,7 @@ public class Constants {
     // Transient failure rate of the virtual machine at maximum operating frequency
     public final static double λ = 1e-5;
     // Measures the sensitivity of transient fault rate to frequency scaling
-    public static final int SR = 2;
+    public final static int SR = 2;
 
     public static final double INTER_BANDWIDTH = 1e6;
     public static final double INTRA_BANDWIDTH = 10 * INTER_BANDWIDTH;
@@ -95,7 +95,7 @@ public class Constants {
     public static final List<Double> RELIABILITY_FACTOR_LIST = List.of(0.92, 0.94, 0.96, 0.98);
     public static final List<JobSequenceStrategyEnum> JOB_SEQUENCE_STRATEGY_LIST = List.of(JobSequenceStrategyEnum.DEADLINE, JobSequenceStrategyEnum.UPWARD_RANK, JobSequenceStrategyEnum.DOWNWARD_RANK);
     public static final List<Double> NEIGHBORHOOD_FACTOR_LIST = List.of(0.2, 0.4, 0.6, 0.8);
-//    public static final List<Double> SLACK_TIME_FACTOR_LIST = List.of(0.2, 0.4, 0.6, 0.8);
+    public static final List<Double> SLACK_TIME_FACTOR_LIST = List.of(0.2, 0.4, 0.6, 0.8);
 
     // default parameter values
     public static Class<? extends WorkflowComparatorInterface> WORKFLOW_COMPARATOR = WORKFLOW_COMPARATOR_LIST.getFirst();
@@ -108,7 +108,7 @@ public class Constants {
 
     public static final int MAX_RETRY_COUNT = Integer.MAX_VALUE;
 
-    public static final boolean ENABLE_DVFS = false;
+    public static boolean ENABLE_DVFS = false;
     public static final boolean ENABLE_SIM_DATA = false;
 
     public static final double α = 110.0;

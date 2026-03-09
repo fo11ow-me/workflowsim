@@ -29,7 +29,7 @@ public class DataLoader {
     }
 
     private static void uploadCpus() {
-        RedisUtil.set("cpu:list", getCpus());
+        RedisUtil.set(CPUS, getCpus());
     }
 
     private static void uploadDaxs() {

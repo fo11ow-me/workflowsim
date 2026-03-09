@@ -67,7 +67,7 @@ public class ExperimentUtil {
      */
     public static List<Vm> createVms(final ContinuousDistribution random, int userId) {
         List<Vm> list = new ArrayList<>();
-        List<Cpu> cpuList = RedisUtil.get("cpu:list");
+        List<Cpu> cpuList = RedisUtil.get(CPUS);
         //create VMs
         for (int i = 0; i < VMS; i++) {
             Cpu cpu = getRandomElement(random, cpuList);

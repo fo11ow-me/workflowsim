@@ -5,11 +5,14 @@ import com.qiujie.enums.JobSequenceStrategyEnum;
 import com.qiujie.util.ExperimentUtil;
 import lombok.Data;
 import lombok.experimental.Accessors;
+
+import java.util.function.BiConsumer;
+
 import static com.qiujie.Constants.*;
 
 @Data
 @Accessors(chain = true)
-public class Param  {
+public class Param {
     // Default parameter values from Constants
     private Class<? extends WorkflowComparatorInterface> workflowComparator = WORKFLOW_COMPARATOR;
     private boolean ascending = ASCENDING;
@@ -24,7 +27,7 @@ public class Param  {
         StringBuilder sb = new StringBuilder();
         final boolean[] hasDiff = {false};
 
-        java.util.function.BiConsumer<String, Object> appendIfNotDefault = (key, val) -> {
+        BiConsumer<String, Object> appendIfNotDefault = (key, val) -> {
             if (hasDiff[0]) sb.append(",");
             else sb.append("(");
             sb.append(key).append("=").append(val);
@@ -66,5 +69,4 @@ public class Param  {
             return "";
         }
     }
-
 }

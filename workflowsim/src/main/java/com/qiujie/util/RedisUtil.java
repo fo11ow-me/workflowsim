@@ -12,7 +12,7 @@ import java.util.List;
 
 import static com.qiujie.Constants.*;
 
-public class RedisUtil {
+public class  RedisUtil {
 
 
     private static volatile JedisPool jedisPool;

@@ -26,7 +26,7 @@ public class Example05 extends ExperimentStarter {
 
 
     @Override
-    protected void addParams() {
+    protected void addParams() throws InterruptedException {
         setLevel(Level.WARN);
         List<String> daxList = List.of(
                 "Montage_50"

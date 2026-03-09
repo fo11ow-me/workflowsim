@@ -24,7 +24,7 @@ public class Example07 extends ExperimentStarter {
 
 
     @Override
-    protected void addParams() {
+    protected void addParams() throws InterruptedException {
         List<String> daxList = List.of(
                 "Genome_100"
                 , "Montage_50"
